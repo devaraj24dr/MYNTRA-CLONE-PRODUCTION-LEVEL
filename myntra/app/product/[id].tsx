@@ -14,70 +14,9 @@ import { Heart, ShoppingBag } from "lucide-react-native";
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
-
-// Mock product data - in a real app, this would come from an API
-// const products = {
-//   "1": {
-//     id: 1,
-//     name: "Casual White T-Shirt",
-//     brand: "Roadster",
-//     price: 499,
-//     discount: "60% OFF",
-//     description:
-//       "Classic white t-shirt made from premium cotton. Perfect for everyday wear with a comfortable regular fit.",
-//     sizes: ["S", "M", "L", "XL"],
-//     images: [
-//       "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop",
-//       "https://images.unsplash.com/photo-1562157873-818bc0726f68?w=500&auto=format&fit=crop",
-//       "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=500&auto=format&fit=crop",
-//     ],
-//   },
-//   "2": {
-//     id: 2,
-//     name: "Denim Jacket",
-//     brand: "Levis",
-//     price: 2499,
-//     discount: "40% OFF",
-//     description:
-//       "Classic denim jacket with a modern twist. Features premium quality denim and comfortable fit.",
-//     sizes: ["S", "M", "L", "XL"],
-//     images: [
-//       "https://images.unsplash.com/photo-1523205771623-e0faa4d2813d?w=500&auto=format&fit=crop",
-//       "https://images.unsplash.com/photo-1542272604-787c3835535d?w=500&auto=format&fit=crop",
-//       "https://images.unsplash.com/photo-1601933973783-43cf8a7d4c5f?w=500&auto=format&fit=crop",
-//     ],
-//   },
-//   "3": {
-//     id: 3,
-//     name: "Summer Dress",
-//     brand: "ONLY",
-//     price: 1299,
-//     discount: "50% OFF",
-//     description:
-//       "Flowy summer dress perfect for warm weather. Made from lightweight fabric with a flattering cut.",
-//     sizes: ["XS", "S", "M", "L"],
-//     images: [
-//       "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&auto=format&fit=crop",
-//       "https://images.unsplash.com/photo-1623609163859-ca93c959b98a?w=500&auto=format&fit=crop",
-//       "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&auto=format&fit=crop",
-//     ],
-//   },
-//   "4": {
-//     id: 4,
-//     name: "Classic Sneakers",
-//     brand: "Nike",
-//     price: 3499,
-//     discount: "30% OFF",
-//     description:
-//       "Versatile sneakers that combine style and comfort. Perfect for both casual wear and light exercise.",
-//     sizes: ["UK6", "UK7", "UK8", "UK9", "UK10"],
-//     images: [
-//       "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop",
-//       "https://images.unsplash.com/photo-1607522370275-f14206abe5d3?w=500&auto=format&fit=crop",
-//       "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=500&auto=format&fit=crop",
-//     ],
-//   },
-// };
+import API_URL from "@/constants/Api";
+import { useTheme } from "@/hooks/useTheme";
+import { addRecentlyViewed } from "@/utils/recentlyViewed";
 
 export default function ProductDetails() {
   const { id } = useLocalSearchParams();
@@ -92,16 +31,45 @@ export default function ProductDetails() {
   const { user } = useAuth();
   const [product, setproduct] = useState<any>(null);
   const [iswishlist, setiswishlist] = useState(false);
-  useEffect(() => {
-    // Simulate loading time
+  const [similarProducts, setSimilarProducts] = useState<any[]>([]);
+  const [isSimilarLoading, setIsSimilarLoading] = useState(false);
+  const { theme, currentTheme } = useTheme();
 
+  useEffect(() => {
     const fetchproduct = async () => {
       try {
         setIsLoading(true);
-        const product = await axios.get(
-          `https://myntra-clone-xj36.onrender.com/product/${id}`
+        const productResponse = await axios.get(
+          `${API_URL}/product/${id}`
         );
-        setproduct(product.data);
+        const productData = productResponse.data;
+        setproduct(productData);
+        if (productData) {
+          addRecentlyViewed(productData, user?._id).catch((err) =>
+            console.error("Error adding to recently viewed:", err)
+          );
+
+          // Log product view in recommendation engine
+          if (user?._id) {
+            axios.post(`${API_URL}/recommendations/view`, {
+              userId: user._id,
+              productId: productData._id,
+            }).catch((err) => console.log("Error logging view history:", err));
+
+            // Check if product is already wishlisted
+            axios.get(`${API_URL}/wishlist/${user._id}`)
+              .then((res) => {
+                const already = res.data.some(
+                  (w: any) => w.productId?._id?.toString() === productData._id?.toString()
+                );
+                setiswishlist(already);
+              })
+              .catch(() => {});
+          }
+
+          // Fetch similar products
+          fetchSimilarProducts();
+        }
       } catch (error) {
         console.log(error);
         setIsLoading(false);
@@ -110,7 +78,41 @@ export default function ProductDetails() {
       }
     };
     fetchproduct();
-  }, []);
+  }, [id, user?._id]);
+
+  const fetchSimilarProducts = async () => {
+    try {
+      setIsSimilarLoading(true);
+      const res = await axios.get(`${API_URL}/recommendations/similar/${id}?userId=${user?._id || ""}&limit=4`);
+      setSimilarProducts(res.data || []);
+      
+      // Track impressions for similar products
+      if (user?._id && res.data && res.data.length > 0) {
+        res.data.forEach((item: any) => {
+          axios.post(`${API_URL}/recommendations/analytics`, {
+            userId: user._id,
+            recommendationId: item._id,
+            clicked: false
+          }).catch(err => console.log("Analytics impression error:", err));
+        });
+      }
+    } catch (err) {
+      console.log("Error fetching similar products:", err);
+    } finally {
+      setIsSimilarLoading(false);
+    }
+  };
+
+  const handleSimilarPress = async (productId: string) => {
+    if (user?._id) {
+      axios.post(`${API_URL}/recommendations/analytics`, {
+        userId: user._id,
+        recommendationId: productId,
+        clicked: true
+      }).catch(err => console.log("Analytics click error:", err));
+    }
+    router.push(`/product/${productId}`);
+  };
 
   useEffect(() => {
     // Start auto-scroll
@@ -121,11 +123,14 @@ export default function ProductDetails() {
         clearInterval(autoScrollTimer.current);
       }
     };
-  }, []);
+  }, [product]);
 
   const startAutoScroll = () => {
+    if (autoScrollTimer.current) {
+      clearInterval(autoScrollTimer.current);
+    }
     autoScrollTimer.current = setInterval(() => {
-      if (product && scrollViewRef.current) {
+      if (product && product.images && product.images.length > 0 && scrollViewRef.current) {
         const nextIndex = (currentImageIndex + 1) % product.images.length;
         scrollViewRef.current.scrollTo({
           x: nextIndex * width,
@@ -136,13 +141,22 @@ export default function ProductDetails() {
     }, 3000);
   };
 
-  if (!product) {
+  if (isLoading) {
     return (
-      <View style={styles.container}>
-        <Text>Product not found</Text>
+      <View style={[styles.loaderContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
+
+  if (!product) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: "center", alignItems: "center" }]}>
+        <Text style={{ color: theme.text }}>Product not found</Text>
+      </View>
+    );
+  }
+
   const handleAddwishlist = async () => {
     if (!user) {
       router.push("/login");
@@ -150,16 +164,21 @@ export default function ProductDetails() {
     }
 
     try {
-      await axios.post(`https://myntra-clone-xj36.onrender.com/wishlist`, {
+      const res = await axios.post(`${API_URL}/wishlist`, {
         userId: user._id,
         productId: id,
       });
-      setiswishlist(true);
-      router.push("/wishlist");
-    } catch (error) {
-      console.log(error);
+      if (res.data.removed) {
+        setiswishlist(false);
+      } else {
+        setiswishlist(true);
+        router.push("/(tabs)/wishlist");
+      }
+    } catch (error: any) {
+      console.log("Wishlist error:", error?.response?.data || error?.message);
     }
   };
+
   const handleAddToBag = async () => {
     if (!user) {
       router.push("/login");
@@ -167,25 +186,23 @@ export default function ProductDetails() {
     }
 
     if (!selectedSize) {
-      // In a real app, show a proper error message
       alert("Please select a size");
       return;
     }
     try {
       setLoading(true);
-      await axios.post(`https://myntra-clone-xj36.onrender.com/bag`, {
+      await axios.post(`${API_URL}/bag`, {
         userId: user._id,
         productId: id,
         size: selectedSize,
         quantity: 1,
       });
-      router.push("/bag");
+      router.push("/(tabs)/bag");
     } catch (error) {
       console.log(error);
     } finally {
       setLoading(false);
     }
-    // In a real app, this would add the item to the cart in your state management solution
   };
 
   const handleScroll = (event: any) => {
@@ -200,16 +217,8 @@ export default function ProductDetails() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#ff3f6c" />
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView>
         <View style={styles.carouselContainer}>
           <ScrollView
@@ -245,8 +254,8 @@ export default function ProductDetails() {
         <View style={styles.content}>
           <View style={styles.header}>
             <View>
-              <Text style={styles.brand}>{product.brand}</Text>
-              <Text style={styles.name}>{product.name}</Text>
+              <Text style={[styles.brand, { color: theme.secondaryText }]}>{product.brand}</Text>
+              <Text style={[styles.name, { color: theme.text }]}>{product.name}</Text>
             </View>
             <TouchableOpacity
               style={styles.wishlistButton}
@@ -254,35 +263,37 @@ export default function ProductDetails() {
             >
               <Heart
                 size={24}
-                color={iswishlist ? "#ff3f6c" : "#ccc"}
-                fill={iswishlist ? "#ff3f6c" : "none"}
+                color={iswishlist ? theme.primary : theme.secondaryText}
+                fill={iswishlist ? theme.primary : "none"}
               />
             </TouchableOpacity>
           </View>
 
           <View style={styles.priceContainer}>
-            <Text style={styles.price}>₹{product.price}</Text>
-            <Text style={styles.discount}>{product.discount}</Text>
+            <Text style={[styles.price, { color: theme.text }]}>₹{product.price}</Text>
+            <Text style={[styles.discount, { color: theme.primary }]}>{product.discount}</Text>
           </View>
 
-          <Text style={styles.description}>{product.description}</Text>
+          <Text style={[styles.description, { color: theme.secondaryText }]}>{product.description}</Text>
 
           <View style={styles.sizeSection}>
-            <Text style={styles.sizeTitle}>Select Size</Text>
+            <Text style={[styles.sizeTitle, { color: theme.text }]}>Select Size</Text>
             <View style={styles.sizeGrid}>
               {product.sizes.map((size: any) => (
                 <TouchableOpacity
                   key={size}
                   style={[
                     styles.sizeButton,
-                    selectedSize === size && styles.selectedSize,
+                    { borderColor: theme.border },
+                    selectedSize === size && { borderColor: theme.primary, backgroundColor: currentTheme === "dark" ? "#2a151b" : "#fff4f4" },
                   ]}
                   onPress={() => setSelectedSize(size)}
                 >
                   <Text
                     style={[
                       styles.sizeText,
-                      selectedSize === size && styles.selectedSizeText,
+                      { color: theme.text },
+                      selectedSize === size && { color: theme.primary },
                     ]}
                   >
                     {size}
@@ -291,17 +302,44 @@ export default function ProductDetails() {
               ))}
             </View>
           </View>
+
+          {/* Similar Products Section */}
+          <View style={styles.similarSection}>
+            <Text style={[styles.similarTitle, { color: theme.text }]}>Similar Products</Text>
+            {isSimilarLoading ? (
+              <ActivityIndicator size="small" color={theme.primary} />
+            ) : similarProducts.length === 0 ? (
+              <Text style={{ color: theme.secondaryText }}>No similar products available</Text>
+            ) : (
+              <View style={styles.similarGrid}>
+                {similarProducts.map((item: any, idx: number) => (
+                  <TouchableOpacity
+                    key={`${item._id}-${idx}`}
+                    style={[styles.similarCard, { backgroundColor: theme.card }]}
+                    onPress={() => handleSimilarPress(item._id)}
+                  >
+                    <Image source={{ uri: item.images?.[0] }} style={styles.similarImage} />
+                    <View style={styles.similarInfo}>
+                      <Text style={[styles.similarBrand, { color: theme.text }]} numberOfLines={1}>{item.brand}</Text>
+                      <Text style={[styles.similarName, { color: theme.secondaryText }]} numberOfLines={1}>{item.name}</Text>
+                      <Text style={[styles.similarPrice, { color: theme.text }]}>₹{item.price}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
         <TouchableOpacity
           style={styles.addToBagButton}
           onPress={handleAddToBag}
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator size="small" color="#ff3f6c" />
+            <ActivityIndicator size="small" color="#fff" />
           ) : (
             <>
               <ShoppingBag size={20} color="#fff" />
@@ -317,13 +355,11 @@ export default function ProductDetails() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   loaderContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
   },
   carouselContainer: {
     position: "relative",
@@ -362,13 +398,11 @@ const styles = StyleSheet.create({
   },
   brand: {
     fontSize: 16,
-    color: "#666",
     marginBottom: 5,
   },
   name: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#3e3e3e",
     marginBottom: 10,
   },
   wishlistButton: {
@@ -382,16 +416,13 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#3e3e3e",
     marginRight: 10,
   },
   discount: {
     fontSize: 16,
-    color: "#ff3f6c",
   },
   description: {
     fontSize: 16,
-    color: "#666",
     lineHeight: 24,
     marginBottom: 20,
   },
@@ -401,7 +432,6 @@ const styles = StyleSheet.create({
   sizeTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#3e3e3e",
     marginBottom: 10,
   },
   sizeGrid: {
@@ -414,26 +444,61 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     borderWidth: 1,
-    borderColor: "#ddd",
     justifyContent: "center",
     alignItems: "center",
   },
-  selectedSize: {
-    borderColor: "#ff3f6c",
-    backgroundColor: "#fff4f4",
-  },
   sizeText: {
     fontSize: 16,
-    color: "#3e3e3e",
   },
-  selectedSizeText: {
-    color: "#ff3f6c",
+  similarSection: {
+    marginTop: 25,
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+    paddingTop: 20,
+  },
+  similarTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+  },
+  similarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  similarCard: {
+    width: "48%",
+    borderRadius: 8,
+    overflow: "hidden",
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+    paddingBottom: 10,
+  },
+  similarImage: {
+    width: "100%",
+    height: 150,
+  },
+  similarInfo: {
+    padding: 10,
+  },
+  similarBrand: {
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  similarName: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  similarPrice: {
+    fontSize: 12,
+    fontWeight: "bold",
+    marginTop: 5,
   },
   footer: {
     padding: 15,
-    backgroundColor: "#fff",
     borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
   },
   addToBagButton: {
     backgroundColor: "#ff3f6c",

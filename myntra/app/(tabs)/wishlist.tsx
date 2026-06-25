@@ -1,5 +1,6 @@
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
+import API_URL from "@/constants/Api";
 import { useRouter } from "expo-router";
 import { Heart, Trash2 } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
@@ -12,41 +13,25 @@ import {
   Image,
   ActivityIndicator,
 } from "react-native";
+import { useTheme } from "@/hooks/useTheme";
 
-// const wishlistItems = [
-//   {
-//     id: 1,
-//     name: "Premium Cotton T-Shirt",
-//     brand: "H&M",
-//     price: "₹799",
-//     discount: "40% OFF",
-//     image:
-//       "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop",
-//   },
-//   {
-//     id: 2,
-//     name: "Slim Fit Denim Jacket",
-//     brand: "Levis",
-//     price: "₹2999",
-//     discount: "30% OFF",
-//     image:
-//       "https://images.unsplash.com/photo-1523205771623-e0faa4d2813d?w=500&auto=format&fit=crop",
-//   },
-// ];
 export default function Wishlist() {
   const router = useRouter();
   const { user } = useAuth();
   const [wishlist, setwishlist] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { theme, currentTheme } = useTheme();
+
   useEffect(() => {
     fetchproduct();
   }, [user]);
+
   const fetchproduct = async () => {
     if (user) {
       try {
         setIsLoading(true);
         const bag = await axios.get(
-          `https://myntra-clone-xj36.onrender.com/wishlist/${user._id}`
+          `${API_URL}/wishlist/${user._id}`
         );
         setwishlist(bag.data);
       } catch (error) {
@@ -57,28 +42,29 @@ export default function Wishlist() {
       }
     }
   };
-  const handledelete=async(itemid:any)=>{
+
+  const handledelete = async (itemid: any) => {
     try {
-      await axios.delete(`https://myntra-clone-xj36.onrender.com/wishlist/${itemid}`)
+      await axios.delete(`${API_URL}/wishlist/${itemid}`);
       fetchproduct();
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-   
-  }
+  };
+
   if (!user) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Wishlist</Text>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>Wishlist</Text>
         </View>
         <View style={styles.emptyState}>
-          <Heart size={64} color="#ff3f6c" />
-          <Text style={styles.emptyTitle}>
+          <Heart size={64} color={theme.primary} />
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>
             Please login to view your wishlist
           </Text>
           <TouchableOpacity
-            style={styles.loginButton}
+            style={[styles.loginButton, { backgroundColor: theme.primary }]}
             onPress={() => router.push("/login")}
           >
             <Text style={styles.loginButtonText}>LOGIN</Text>
@@ -87,33 +73,35 @@ export default function Wishlist() {
       </View>
     );
   }
+
   if (isLoading) {
     return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#ff3f6c" />
+      <View style={[styles.loaderContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Wishlist</Text>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Wishlist</Text>
       </View>
 
       <ScrollView style={styles.content}>
-        {wishlist?.map((item:any) => (
-          <View key={item._id} style={styles.wishlistItem}>
-            <Image  source={{ uri: item.productId.images[0] }} style={styles.itemImage} />
+        {wishlist?.filter((item: any) => item.productId).map((item: any) => (
+          <View key={item._id} style={[styles.wishlistItem, { backgroundColor: theme.card, shadowColor: currentTheme === "dark" ? "#000" : "#ccc" }]}>
+            <Image source={{ uri: item.productId.images?.[0] || "" }} style={styles.itemImage} />
             <View style={styles.itemInfo}>
-              <Text style={styles.brandName}>{item.productId.brand}</Text>
-              <Text style={styles.itemName}>{item.productId.name}</Text>
+              <Text style={[styles.brandName, { color: theme.secondaryText }]}>{item.productId.brand}</Text>
+              <Text style={[styles.itemName, { color: theme.text }]}>{item.productId.name}</Text>
               <View style={styles.priceContainer}>
-                <Text style={styles.price}>{item.productId.price}</Text>
-                <Text style={styles.discount}>{item.productId.discount}</Text>
+                <Text style={[styles.price, { color: theme.text }]}>{item.productId.price}</Text>
+                <Text style={[styles.discount, { color: theme.primary }]}>{item.productId.discount}</Text>
               </View>
             </View>
-            <TouchableOpacity style={styles.removeButton} onPress={()=>handledelete(item._id)}>
-              <Trash2 size={24} color="#ff3f6c" />
+            <TouchableOpacity style={styles.removeButton} onPress={() => handledelete(item._id)}>
+              <Trash2 size={24} color={theme.primary} />
             </TouchableOpacity>
           </View>
         ))}

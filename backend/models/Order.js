@@ -20,7 +20,7 @@ const OrderItemSchema = new mongoose.Schema({
 });
 const OrderSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     date: String,
     status: String,
     items: [OrderItemSchema],
@@ -31,5 +31,8 @@ const OrderSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+OrderSchema.index({ userId: 1 });
+OrderSchema.index({ "items.productId": 1 });
 
 module.exports = mongoose.model("Order", OrderSchema);

@@ -20,6 +20,8 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { Search, X } from "lucide-react-native";
 import axios from "axios";
+import API_URL from "@/constants/Api";
+import { useTheme } from "@/hooks/useTheme";
 
 // const categories = [
 //   {
@@ -120,6 +122,7 @@ import axios from "axios";
 
 export default function TabTwoScreen() {
   const router = useRouter();
+  const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
@@ -131,7 +134,7 @@ export default function TabTwoScreen() {
     const fetchproduct = async () => {
       try {
         setIsLoading(true);
-        const cat = await axios.get("https://myntra-clone-xj36.onrender.com/category");
+        const cat = await axios.get(`${API_URL}/category`);
         setcategories(cat.data);
       } catch (error) {
         console.log(error);
@@ -144,15 +147,15 @@ export default function TabTwoScreen() {
   }, []);
   if (isLoading) {
     return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#ff3f6c" />
+      <View style={[styles.loaderContainer, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
   if (!categories) {
     return (
-      <View style={styles.container}>
-        <Text>Categories not found</Text>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Text style={{ color: theme.text }}>Categories not found</Text>
       </View>
     );
   }
@@ -194,39 +197,40 @@ export default function TabTwoScreen() {
     return products?.map((product: any) => (
       <TouchableOpacity
         key={product._id}
-        style={styles.productCard}
+        style={[styles.productCard, { backgroundColor: theme.card }]}
         onPress={() => router.push(`/product/${product._id}`)}
       >
         <Image source={{ uri: product.images[0] }} style={styles.productImage} />
         <View style={styles.productInfo}>
-          <Text style={styles.brandName}>{product.brand}</Text>
-          <Text style={styles.productName}>{product.name}</Text>
+          <Text style={[styles.brandName, { color: theme.secondaryText }]}>{product.brand}</Text>
+          <Text style={[styles.productName, { color: theme.text }]}>{product.name}</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.price}>₹{product.price}</Text>
-            <Text style={styles.discount}>{product.discount}</Text>
+            <Text style={[styles.price, { color: theme.text }]}>₹{product.price}</Text>
+            <Text style={[styles.discount, { color: theme.primary }]}>{product.discount}</Text>
           </View>
         </View>
       </TouchableOpacity>
     ));
   };
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Categories</Text>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Categories</Text>
       </View>
 
-      <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <Search size={20} color="#666" style={styles.searchIcon} />
+      <View style={[styles.searchContainer, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+        <View style={[styles.searchInputContainer, { backgroundColor: theme.surface }]}>
+          <Search size={20} color={theme.secondaryText} style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: theme.text }]}
             placeholder="Search for products, brands and more"
+            placeholderTextColor={theme.secondaryText}
             value={searchQuery}
             onChangeText={handleSearch}
           />
           {searchQuery !== "" && (
             <TouchableOpacity onPress={clearSearch}>
-              <X size={20} color="#666" />
+              <X size={20} color={theme.secondaryText} />
             </TouchableOpacity>
           )}
         </View>
@@ -237,7 +241,7 @@ export default function TabTwoScreen() {
             {filtercategories?.map((category: any) => (
               <TouchableOpacity
                 key={category._id}
-                style={styles.categoryCard}
+                style={[styles.categoryCard, { backgroundColor: theme.card }]}
                 onPress={() => handleCategorySelect(category._id)}
               >
                 <Image
@@ -245,16 +249,16 @@ export default function TabTwoScreen() {
                   style={styles.categoryImage}
                 />
                 <View style={styles.categoryInfo}>
-                  <Text style={styles.categoryName}>{category.name}</Text>
+                  <Text style={[styles.categoryName, { color: theme.text }]}>{category.name}</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <View style={styles.subcategories}>
                       {category?.subcategory?.map((sub: any, index: any) => (
                         <TouchableOpacity
                           key={index}
-                          style={styles.subcategoryTag}
+                          style={[styles.subcategoryTag, { backgroundColor: theme.surface }]}
                           onPress={() => handleSubcategorySelect(sub)}
                         >
-                          <Text style={styles.subcategoryText}>{sub}</Text>
+                          <Text style={[styles.subcategoryText, { color: theme.secondaryText }]}>{sub}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
@@ -272,9 +276,9 @@ export default function TabTwoScreen() {
                 style={styles.backButton}
                 onPress={() => setSelectedCategory(null)}
               >
-                <Text style={styles.backButtonText}>← Back to Categories</Text>
+                <Text style={[styles.backButtonText, { color: theme.primary }]}>← Back to Categories</Text>
               </TouchableOpacity>
-              <Text style={styles.categoryTitle}>
+              <Text style={[styles.categoryTitle, { color: theme.text }]}>
                 {selectedcategorydata.name}
               </Text>
             </View>
@@ -290,15 +294,14 @@ export default function TabTwoScreen() {
                     key={index}
                     style={[
                       styles.subcategoryButton,
-                      selectedSubcategory === sub && styles.selectedSubcategory,
+                      { backgroundColor: selectedSubcategory === sub ? theme.primary : theme.surface },
                     ]}
                     onPress={() => handleSubcategorySelect(sub)}
                   >
                     <Text
                       style={[
                         styles.subcategoryButtonText,
-                        selectedSubcategory === sub &&
-                          styles.selectedSubcategoryText,
+                        { color: selectedSubcategory === sub ? "#fff" : theme.text },
                       ]}
                     >
                       {sub}

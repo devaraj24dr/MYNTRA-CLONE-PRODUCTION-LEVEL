@@ -2,6 +2,9 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { getUserData, saveUserData, clearUserData } from "@/utils/storage";
 import React from "react";
 import axios from "axios";
+import API_URL from "@/constants/Api";
+import { syncRecentlyViewed } from "@/utils/recentlyViewed";
+
 type AuthContextType = {
   isAuthenticated: boolean;
   user: { _id: string; name: string; email: string } | null;
@@ -26,13 +29,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (data._id && data.name && data.email) {
         setUser({ _id: data._id, name: data.name, email: data.email });
         setIsAuthenticated(true);
+        // Sync recently viewed products on app launch
+        syncRecentlyViewed(data._id).catch((err) =>
+          console.error("Sync recently viewed failed on load:", err)
+        );
       }
     })();
   }, []);
 
   const login = async (email: string, password: string) => {
-    // 👉 Replace with your real API URL
-    const res = await axios.post("https://myntra-clone-xj36.onrender.com/user/login", {
+    const res = await axios.post(`${API_URL}/user/login`, {
       email,
       password,
     });
@@ -42,13 +48,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await saveUserData(data._id, data.fullName, data.email);
       setUser({ _id: data._id, name: data.name, email: data.email });
       setIsAuthenticated(true);
+      // Sync recently viewed products on login
+      syncRecentlyViewed(data._id).catch((err) =>
+        console.error("Sync recently viewed failed on login:", err)
+      );
     } else {
       throw new Error(data.message || "Login failed");
     }
   };
   const Signup = async (fullName: string, email: string, password: string) => {
-    // 👉 Replace with your real API URL
-    const res = await axios.post("https://myntra-clone-xj36.onrender.com/user/signup", {
+    const res = await axios.post(`${API_URL}/user/signup`, {
       fullName,
       email,
       password,
@@ -58,6 +67,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await saveUserData(data._id, data.fullName, data.email);
       setUser({ _id: data._id, name: data.name, email: data.email });
       setIsAuthenticated(true);
+      // Sync recently viewed products on signup
+      syncRecentlyViewed(data._id).catch((err) =>
+        console.error("Sync recently viewed failed on signup:", err)
+      );
     } else {
       throw new Error(data.message || "Login failed");
     }

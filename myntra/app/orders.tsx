@@ -20,6 +20,7 @@ import {
 } from "lucide-react-native";
 import React from "react";
 import axios from "axios";
+import API_URL from "@/constants/Api";
 import { useAuth } from "@/context/AuthContext";
 
 const orders = [
@@ -143,7 +144,7 @@ export default function Orders() {
         try {
           setIsLoading(true);
           const product = await axios.get(
-            `https://myntra-clone-xj36.onrender.com/order/user/${user._id}`
+            `${API_URL}/order/user/${user._id}`
           );
           setorder(product.data);
         } catch (error) {

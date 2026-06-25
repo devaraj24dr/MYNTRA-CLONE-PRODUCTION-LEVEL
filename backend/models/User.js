@@ -16,6 +16,12 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    notificationPreferences: {
+      orderUpdates: { type: Boolean, default: true },
+      promotions: { type: Boolean, default: true },
+      priceDrops: { type: Boolean, default: true },
+      cartReminders: { type: Boolean, default: true },
+    },
   },
   { timestamps: true }
 );

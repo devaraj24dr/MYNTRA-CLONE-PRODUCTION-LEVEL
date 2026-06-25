@@ -6,12 +6,16 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  FlatList,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Search, ChevronRight } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
+import API_URL from "@/constants/Api";
+import { getRecentlyViewed, syncRecentlyViewed } from "@/utils/recentlyViewed";
+import { useTheme } from "@/hooks/useTheme";
 
 // const categories = [
 //   {
@@ -100,19 +104,45 @@ export default function Home() {
   const [product, setproduct] = useState<any>(null);
   const [categories, setcategories] = useState<any>(null);
   const { user } = useAuth();
-  const handleProductPress = (productId: number) => {
+  const { theme } = useTheme();
+  const [recentlyViewedList, setRecentlyViewedList] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [isRecsLoading, setIsRecsLoading] = useState(false);
+  const handleProductPress = (productId: string) => {
     if (!user) {
       router.push("/login");
     } else {
       router.push(`/product/${productId}`);
     }
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      const load = async () => {
+        const local = await getRecentlyViewed();
+        if (active) {
+          setRecentlyViewedList(local);
+        }
+        if (user?._id) {
+          const synced = await syncRecentlyViewed(user._id);
+          if (active) {
+            setRecentlyViewedList(synced);
+          }
+        }
+      };
+      load();
+      return () => {
+        active = false;
+      };
+    }, [user?._id])
+  );
   useEffect(() => {
     const fetchproduct = async () => {
       try {
         setIsLoading(true);
-        const cat = await axios.get("https://myntra-clone-xj36.onrender.com/category");
-        const product = await axios.get("https://myntra-clone-xj36.onrender.com/product");
+        const cat = await axios.get(`${API_URL}/category`);
+        const product = await axios.get(`${API_URL}/product`);
         setcategories(cat.data);
         setproduct(product.data);
       } catch (error) {
@@ -124,12 +154,57 @@ export default function Home() {
     };
     fetchproduct();
   }, []);
+
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      try {
+        setIsRecsLoading(true);
+        const url = user?._id 
+          ? `${API_URL}/recommendations/${user._id}?limit=6` 
+          : `${API_URL}/recommendations/popular?limit=6`;
+        const res = await axios.get(url);
+        const recs = user?._id ? res.data.recommendations : res.data;
+        setRecommendations(recs || []);
+
+        // Track impressions for the recommended items
+        if (user?._id && recs && recs.length > 0) {
+          recs.forEach((rec: any) => {
+            axios.post(`${API_URL}/recommendations/analytics`, {
+              userId: user._id,
+              recommendationId: rec._id,
+              clicked: false
+            }).catch(err => console.log("Impression error:", err));
+          });
+        }
+      } catch (err) {
+        console.log("Error fetching recommendations:", err);
+      } finally {
+        setIsRecsLoading(false);
+      }
+    };
+    fetchRecommendations();
+  }, [user?._id]);
+
+  const handleRecommendationPress = async (productId: string) => {
+    if (user?._id) {
+      try {
+        await axios.post(`${API_URL}/recommendations/analytics`, {
+          userId: user._id,
+          recommendationId: productId,
+          clicked: true
+        });
+      } catch (err) {
+        console.log("Error tracking recommendation click:", err);
+      }
+    }
+    handleProductPress(productId);
+  };
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.logo}>MYNTRA</Text>
+    <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+        <Text style={[styles.logo, { color: theme.primary }]}>MYNTRA</Text>
         <TouchableOpacity style={styles.searchButton}>
-          <Search size={24} color="#3e3e3e" />
+          <Search size={24} color={theme.text} />
         </TouchableOpacity>
       </View>
 
@@ -142,10 +217,10 @@ export default function Home() {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>SHOP BY CATEGORY</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>SHOP BY CATEGORY</Text>
           <TouchableOpacity style={styles.viewAll}>
-            <Text style={styles.viewAllText}>View All</Text>
-            <ChevronRight size={20} color="#ff3f6c" />
+            <Text style={[styles.viewAllText, { color: theme.primary }]}>View All</Text>
+            <ChevronRight size={20} color={theme.primary} />
           </TouchableOpacity>
         </View>
         <ScrollView
@@ -156,19 +231,19 @@ export default function Home() {
           {isLoading ? (
             <ActivityIndicator
               size="large"
-              color="#ff3f6c"
+              color={theme.primary}
               style={styles.loader}
             />
           ) : !categories || categories.length === 0 ? (
-            <Text style={styles.emptyText}>No categories available</Text>
+            <Text style={[styles.emptyText, { color: theme.text }]}>No categories available</Text>
           ) : (
-            categories.map((category: any) => (
-              <TouchableOpacity key={category._id} style={styles.categoryCard}>
+            categories.map((category: any, idx: number) => (
+              <TouchableOpacity key={`${category._id}-${idx}`} style={styles.categoryCard}>
                 <Image
                   source={{ uri: category.image }}
                   style={styles.categoryImage}
                 />
-                <Text style={styles.categoryName}>{category.name}</Text>
+                <Text style={[styles.categoryName, { color: theme.text }]}>{category.name}</Text>
               </TouchableOpacity>
             ))
           )}
@@ -177,15 +252,15 @@ export default function Home() {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>DEALS OF THE DAY</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>DEALS OF THE DAY</Text>
         </View>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.dealsScroll}
         >
-          {deals.map((deal) => (
-            <TouchableOpacity key={deal.id} style={styles.dealCard}>
+          {deals.map((deal, idx) => (
+            <TouchableOpacity key={`${deal.id}-${idx}`} style={styles.dealCard}>
               <Image source={{ uri: deal.image }} style={styles.dealImage} />
               <View style={styles.dealOverlay}>
                 <Text style={styles.dealTitle}>{deal.title}</Text>
@@ -195,39 +270,122 @@ export default function Home() {
         </ScrollView>
       </View>
 
+      {recentlyViewedList.length > 0 && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>RECENTLY VIEWED</Text>
+          </View>
+          <FlatList
+            data={recentlyViewedList}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item, idx) => `${item.productId}-${idx}`}
+            contentContainerStyle={styles.recentlyViewedScroll}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[styles.recentlyViewedCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+                onPress={() => handleProductPress(item.productId)}
+              >
+                <Image
+                  source={{ uri: item.image }}
+                  style={styles.recentlyViewedImage}
+                />
+                <View style={styles.recentlyViewedInfo}>
+                  <Text style={[styles.rvBrand, { color: theme.text }]} numberOfLines={1}>
+                    {item.brand}
+                  </Text>
+                  <Text style={[styles.rvName, { color: theme.secondaryText }]} numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  <View style={styles.rvPriceRow}>
+                    <Text style={[styles.rvPrice, { color: theme.text }]}>₹{item.price}</Text>
+                    {item.discount && (
+                      <Text style={[styles.rvDiscount, { color: theme.primary }]}>{item.discount}</Text>
+                    )}
+                  </View>
+                  <View style={styles.ratingRow}>
+                    <Text style={styles.ratingText}>★ {item.rating || 4.2}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      )}
+
+      {/* You May Also Like Section */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>TRENDING NOW</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>YOU MAY ALSO LIKE</Text>
+        </View>
+        {isRecsLoading ? (
+          <ActivityIndicator size="small" color={theme.primary} style={styles.loader} />
+        ) : recommendations.length === 0 ? (
+          <Text style={[styles.emptyText, { color: theme.text }]}>No recommendations available</Text>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.recsScroll}
+          >
+            {recommendations.map((item: any, idx: number) => (
+              <TouchableOpacity
+                key={`${item._id}-${idx}`}
+                style={[styles.recCard, { backgroundColor: theme.card, borderColor: theme.border }]}
+                onPress={() => handleRecommendationPress(item._id)}
+              >
+                <Image source={{ uri: item.images?.[0] }} style={styles.recImage} />
+                <View style={styles.recInfo}>
+                  <Text style={[styles.recBrand, { color: theme.text }]} numberOfLines={1}>
+                    {item.brand}
+                  </Text>
+                  <Text style={[styles.recName, { color: theme.secondaryText }]} numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  <View style={styles.recPriceRow}>
+                    <Text style={[styles.recPrice, { color: theme.text }]}>₹{item.price}</Text>
+                    {item.discount && (
+                      <Text style={[styles.recDiscount, { color: theme.primary }]}>{item.discount}</Text>
+                    )}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>TRENDING NOW</Text>
         </View>
         <View style={styles.productsGrid}>
           {isLoading ? (
             <ActivityIndicator
               size="large"
-              color="#ff3f6c"
+              color={theme.primary}
               style={styles.loader}
             />
           ) : !product || product.length === 0 ? (
-            <Text style={styles.emptyText}>No Product available</Text>
+            <Text style={[styles.emptyText, { color: theme.text }]}>No Product available</Text>
           ) : ( 
             <View style={styles.productsGrid}>
-              {product.map((product: any) => (
+              {product.map((product: any, idx: number) => (
                 <TouchableOpacity
-                  key={product._id}
-                  style={styles.productCard}
+                  key={`${product._id}-${idx}`}
+                  style={[styles.productCard, { backgroundColor: theme.card }]}
                   onPress={() => handleProductPress(product._id)}
                 >
                   <Image
-                    source={{ uri: product.images[0
-                      
-                    ] }}
+                    source={{ uri: product.images[0] }}
                     style={styles.productImage}
                   />
                   <View style={styles.productInfo}>
-                    <Text style={styles.brandName}>{product.brand}</Text>
-                    <Text style={styles.productName}>{product.name}</Text>
+                    <Text style={[styles.brandName, { color: theme.secondaryText }]}>{product.brand}</Text>
+                    <Text style={[styles.productName, { color: theme.text }]}>{product.name}</Text>
                     <View style={styles.priceRow}>
-                      <Text style={styles.productPrice}>{product.price}</Text>
-                      <Text style={styles.discount}>{product.discount}</Text>
+                      <Text style={[styles.productPrice, { color: theme.text }]}>{product.price}</Text>
+                      <Text style={[styles.discount, { color: theme.primary }]}>{product.discount}</Text>
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -396,5 +554,107 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginTop: 50,
+  },
+  recentlyViewedScroll: {
+    marginHorizontal: -8,
+  },
+  recentlyViewedCard: {
+    width: 140,
+    marginHorizontal: 8,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+    overflow: "hidden",
+  },
+  recentlyViewedImage: {
+    width: "100%",
+    height: 140,
+    resizeMode: "cover",
+  },
+  recentlyViewedInfo: {
+    padding: 8,
+  },
+  rvBrand: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: "#3e3e3e",
+    marginBottom: 2,
+  },
+  rvName: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 4,
+  },
+  rvPriceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  rvPrice: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: "#3e3e3e",
+    marginRight: 6,
+  },
+  rvDiscount: {
+    fontSize: 11,
+    color: "#ff3f6c",
+    fontWeight: "600",
+  },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  ratingText: {
+    fontSize: 11,
+    color: "#ffa000",
+    fontWeight: "bold",
+  },
+  recsScroll: {
+    marginHorizontal: -15,
+  },
+  recCard: {
+    width: 140,
+    marginHorizontal: 8,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+    overflow: "hidden",
+  },
+  recImage: {
+    width: "100%",
+    height: 140,
+    resizeMode: "cover",
+  },
+  recInfo: {
+    padding: 8,
+  },
+  recBrand: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: "#3e3e3e",
+    marginBottom: 2,
+  },
+  recName: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 4,
+  },
+  recPriceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  recPrice: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: "#3e3e3e",
+    marginRight: 6,
+  },
+  recDiscount: {
+    fontSize: 11,
+    color: "#ff3f6c",
+    fontWeight: "600",
   },
 });
