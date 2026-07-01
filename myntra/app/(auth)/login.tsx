@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Image,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -20,6 +21,10 @@ export default function Login() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isloading, setisloading] = useState(false);
+  const { width } = useWindowDimensions();
+
+  const isDesktop = width > 768;
+
   const handleLogin = async () => {
     try {
       setisloading(true);
@@ -33,61 +38,66 @@ export default function Login() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isDesktop && styles.desktopContainer]}>
       <Image
         source={{
           uri: "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop",
         }}
-        style={styles.backgroundImage}
+        style={[styles.backgroundImage, isDesktop && styles.desktopImage]}
+        resizeMode="cover"
       />
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>Welcome to Myntra</Text>
-        <Text style={styles.subtitle}>Login to continue shopping</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-        <View style={styles.passwordContainer}>
+      <View style={[styles.formContainer, isDesktop && styles.desktopFormContainer]}>
+        <View style={isDesktop ? styles.desktopFormContent : null}>
+          <Text style={styles.title}>Welcome to Myntra</Text>
+          <Text style={styles.subtitle}>Login to continue shopping</Text>
           <TextInput
-            style={styles.passwordInput}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#999"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
           />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="Password"
+              placeholderTextColor="#999"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? (
+                <EyeOff size={20} color="#666" />
+              ) : (
+                <Eye size={20} color="#666" />
+              )}
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity
-            style={styles.eyeIcon}
-            onPress={() => setShowPassword(!showPassword)}
+            style={styles.button}
+            onPress={handleLogin}
+            disabled={isloading}
           >
-            {showPassword ? (
-              <EyeOff size={20} color="#666" />
+            {isloading ? (
+              <ActivityIndicator color="#fff" />
             ) : (
-              <Eye size={20} color="#666" />
+              <Text style={styles.buttonText}>LOGIN</Text>
             )}
           </TouchableOpacity>
-        </View>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleLogin}
-          disabled={isloading}
-        >
-          {isloading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>LOGIN</Text>
-          )}
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.signupLink}
-          onPress={() => router.push("/signup")}
-        >
-          <Text style={styles.signupText}>Don't have an account? Sign Up</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.signupLink}
+            onPress={() => router.push("/signup")}
+          >
+            <Text style={styles.signupText}>Don't have an account? Sign Up</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -98,11 +108,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
+  desktopContainer: {
+    flexDirection: "row",
+    alignItems: "stretch",
+  },
   backgroundImage: {
     width: "100%",
     height: "50%",
     position: "absolute",
     top: 0,
+  },
+  desktopImage: {
+    position: "relative",
+    width: "55%",
+    height: "100%",
   },
   formContainer: {
     flex: 1,
@@ -112,6 +131,19 @@ const styles = StyleSheet.create({
     marginTop: "60%",
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
+  },
+  desktopFormContainer: {
+    width: "45%",
+    marginTop: 0,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    backgroundColor: "#fff",
+    padding: 60,
+    alignItems: "center",
+  },
+  desktopFormContent: {
+    width: "100%",
+    maxWidth: 400,
   },
   title: {
     fontSize: 28,
@@ -130,6 +162,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 15,
     fontSize: 16,
+    color: "#333",
   },
   passwordContainer: {
     flexDirection: "row",
@@ -142,6 +175,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
     fontSize: 16,
+    color: "#333",
   },
   eyeIcon: {
     padding: 15,

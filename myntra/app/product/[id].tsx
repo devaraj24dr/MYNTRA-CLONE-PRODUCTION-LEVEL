@@ -191,15 +191,31 @@ export default function ProductDetails() {
     }
     try {
       setLoading(true);
-      await axios.post(`${API_URL}/bag`, {
+
+      // Step 1: Fetch the current cart version to avoid optimistic-lock conflicts
+      let currentVersion = 0;
+      try {
+        const cartRes = await axios.get(`${API_URL}/cart/${user._id}`);
+        currentVersion = cartRes.data?.cart?.version ?? 0;
+      } catch {
+        // If cart doesn't exist yet, version 0 is correct
+        currentVersion = 0;
+      }
+
+      // Step 2: Add item using the correct server version
+      await axios.post(`${API_URL}/cart/add`, {
         userId: user._id,
         productId: id,
         size: selectedSize,
         quantity: 1,
+        version: currentVersion,
       });
+
       router.push("/(tabs)/bag");
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      const msg = error?.response?.data?.error || "Failed to add item to bag. Please try again.";
+      alert(msg);
+      console.log("Add to bag error:", error?.response?.data || error);
     } finally {
       setLoading(false);
     }

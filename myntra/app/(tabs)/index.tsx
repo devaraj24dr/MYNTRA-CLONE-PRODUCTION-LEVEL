@@ -218,7 +218,7 @@ export default function Home() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>SHOP BY CATEGORY</Text>
-          <TouchableOpacity style={styles.viewAll}>
+          <TouchableOpacity style={styles.viewAll} onPress={() => router.push("/categories")}>
             <Text style={[styles.viewAllText, { color: theme.primary }]}>View All</Text>
             <ChevronRight size={20} color={theme.primary} />
           </TouchableOpacity>
@@ -238,7 +238,14 @@ export default function Home() {
             <Text style={[styles.emptyText, { color: theme.text }]}>No categories available</Text>
           ) : (
             categories.map((category: any, idx: number) => (
-              <TouchableOpacity key={`${category._id}-${idx}`} style={styles.categoryCard}>
+              <TouchableOpacity
+                key={`${category._id}-${idx}`}
+                style={styles.categoryCard}
+                onPress={() => router.push({
+                  pathname: "/categories",
+                  params: { categoryId: category._id }
+                })}
+              >
                 <Image
                   source={{ uri: category.image }}
                   style={styles.categoryImage}
@@ -260,7 +267,14 @@ export default function Home() {
           style={styles.dealsScroll}
         >
           {deals.map((deal, idx) => (
-            <TouchableOpacity key={`${deal.id}-${idx}`} style={styles.dealCard}>
+            <TouchableOpacity
+              key={`${deal.id}-${idx}`}
+              style={styles.dealCard}
+              onPress={() => router.push({
+                pathname: "/categories",
+                params: { dealId: deal.id === 1 ? "under599" : "40-70off" }
+              })}
+            >
               <Image source={{ uri: deal.image }} style={styles.dealImage} />
               <View style={styles.dealOverlay}>
                 <Text style={styles.dealTitle}>{deal.title}</Text>

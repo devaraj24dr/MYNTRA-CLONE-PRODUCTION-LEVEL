@@ -8,6 +8,7 @@ import {
   Image,
   ScrollView,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Eye, EyeOff } from "lucide-react-native";
@@ -29,6 +30,9 @@ export default function Signup() {
     email: "",
     password: "",
   });
+
+  const { width } = useWindowDimensions();
+  const isDesktop = width > 768;
 
   const validateForm = () => {
     let isValid = true;
@@ -65,7 +69,6 @@ export default function Signup() {
 
   const handleSignup = async () => {
     if (validateForm()) {
-      // Here you would typically make an API call to register the user
       try {
         setisloading(true);
         await Signup(formData.fullName, formData.email, formData.password);
@@ -75,107 +78,206 @@ export default function Signup() {
       } finally {
         setisloading(false);
       }
-      router.replace("/(tabs)");
     }
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-    >
+    <View style={[styles.container, isDesktop && styles.desktopContainer]}>
       <Image
         source={{
           uri: "https://images.pexels.com/photos/5632402/pexels-photo-5632402.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
         }}
-        style={styles.backgroundImage}
+        style={[styles.backgroundImage, isDesktop && styles.desktopImage]}
+        resizeMode="cover"
       />
 
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>
-          Join Myntra and discover amazing fashion
-        </Text>
+      {isDesktop ? (
+        <View style={styles.desktopFormContainer}>
+          <View style={styles.desktopFormContent}>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>
+              Join Myntra and discover amazing fashion
+            </Text>
 
-        <View style={styles.inputGroup}>
-          <TextInput
-            style={[styles.input, errors.fullName && styles.inputError]}
-            placeholder="Full Name"
-            value={formData.fullName}
-            onChangeText={(text) =>
-              setFormData({ ...formData, fullName: text })
-            }
-          />
-          {errors.fullName ? (
-            <Text style={styles.errorText}>{errors.fullName}</Text>
-          ) : null}
-        </View>
+            <View style={styles.inputGroup}>
+              <TextInput
+                style={[styles.input, errors.fullName && styles.inputError]}
+                placeholder="Full Name"
+                placeholderTextColor="#999"
+                value={formData.fullName}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, fullName: text })
+                }
+              />
+              {errors.fullName ? (
+                <Text style={styles.errorText}>{errors.fullName}</Text>
+              ) : null}
+            </View>
 
-        <View style={styles.inputGroup}>
-          <TextInput
-            style={[styles.input, errors.email && styles.inputError]}
-            placeholder="Email"
-            value={formData.email}
-            onChangeText={(text) => setFormData({ ...formData, email: text })}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          {errors.email ? (
-            <Text style={styles.errorText}>{errors.email}</Text>
-          ) : null}
-        </View>
+            <View style={styles.inputGroup}>
+              <TextInput
+                style={[styles.input, errors.email && styles.inputError]}
+                placeholder="Email"
+                placeholderTextColor="#999"
+                value={formData.email}
+                onChangeText={(text) => setFormData({ ...formData, email: text })}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              {errors.email ? (
+                <Text style={styles.errorText}>{errors.email}</Text>
+              ) : null}
+            </View>
 
-        <View style={styles.inputGroup}>
-          <View
-            style={[
-              styles.passwordContainer,
-              errors.password && styles.inputError,
-            ]}
-          >
-            <TextInput
-              style={styles.passwordInput}
-              placeholder="Password"
-              value={formData.password}
-              onChangeText={(text) =>
-                setFormData({ ...formData, password: text })
-              }
-              secureTextEntry={!showPassword}
-            />
+            <View style={styles.inputGroup}>
+              <View
+                style={[
+                  styles.passwordContainer,
+                  errors.password && styles.inputError,
+                ]}
+              >
+                <TextInput
+                  style={styles.passwordInput}
+                  placeholder="Password"
+                  placeholderTextColor="#999"
+                  value={formData.password}
+                  onChangeText={(text) =>
+                    setFormData({ ...formData, password: text })
+                  }
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  style={styles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff size={20} color="#666" />
+                  ) : (
+                    <Eye size={20} color="#666" />
+                  )}
+                </TouchableOpacity>
+              </View>
+              {errors.password ? (
+                <Text style={styles.errorText}>{errors.password}</Text>
+              ) : null}
+            </View>
+
             <TouchableOpacity
-              style={styles.eyeIcon}
-              onPress={() => setShowPassword(!showPassword)}
+              style={styles.button}
+              onPress={handleSignup}
+              disabled={isloading}
             >
-              {showPassword ? (
-                <EyeOff size={20} color="#666" />
+              {isloading ? (
+                <ActivityIndicator color="#fff" />
               ) : (
-                <Eye size={20} color="#666" />
+                <Text style={styles.buttonText}>SIGN UP</Text>
               )}
             </TouchableOpacity>
-          </View>
-          {errors.password ? (
-            <Text style={styles.errorText}>{errors.password}</Text>
-          ) : null}
-        </View>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleSignup}
-          disabled={isloading}
-        >
-          {isloading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>SIGN UP</Text>
-          )}
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.loginLink}
-          onPress={() => router.push("/login")}
+            <TouchableOpacity
+              style={styles.loginLink}
+              onPress={() => router.push("/login")}
+            >
+              <Text style={styles.loginText}>Already have an account? Login</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.scrollContent}
         >
-          <Text style={styles.loginText}>Already have an account? Login</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          <View style={styles.formContainer}>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>
+              Join Myntra and discover amazing fashion
+            </Text>
+
+            <View style={styles.inputGroup}>
+              <TextInput
+                style={[styles.input, errors.fullName && styles.inputError]}
+                placeholder="Full Name"
+                placeholderTextColor="#999"
+                value={formData.fullName}
+                onChangeText={(text) =>
+                  setFormData({ ...formData, fullName: text })
+                }
+              />
+              {errors.fullName ? (
+                <Text style={styles.errorText}>{errors.fullName}</Text>
+              ) : null}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <TextInput
+                style={[styles.input, errors.email && styles.inputError]}
+                placeholder="Email"
+                placeholderTextColor="#999"
+                value={formData.email}
+                onChangeText={(text) => setFormData({ ...formData, email: text })}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+              {errors.email ? (
+                <Text style={styles.errorText}>{errors.email}</Text>
+              ) : null}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <View
+                style={[
+                  styles.passwordContainer,
+                  errors.password && styles.inputError,
+                ]}
+              >
+                <TextInput
+                  style={styles.passwordInput}
+                  placeholder="Password"
+                  placeholderTextColor="#999"
+                  value={formData.password}
+                  onChangeText={(text) =>
+                    setFormData({ ...formData, password: text })
+                  }
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  style={styles.eyeIcon}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff size={20} color="#666" />
+                  ) : (
+                    <Eye size={20} color="#666" />
+                  )}
+                </TouchableOpacity>
+              </View>
+              {errors.password ? (
+                <Text style={styles.errorText}>{errors.password}</Text>
+              ) : null}
+            </View>
+
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleSignup}
+              disabled={isloading}
+            >
+              {isloading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>SIGN UP</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.loginLink}
+              onPress={() => router.push("/login")}
+            >
+              <Text style={styles.loginText}>Already have an account? Login</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      )}
+    </View>
   );
 }
 
@@ -183,6 +285,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+  },
+  desktopContainer: {
+    flexDirection: "row",
+    alignItems: "stretch",
   },
   scrollContent: {
     flexGrow: 1,
@@ -193,6 +299,11 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
   },
+  desktopImage: {
+    position: "relative",
+    width: "55%",
+    height: "100%",
+  },
   formContainer: {
     flex: 1,
     padding: 20,
@@ -200,6 +311,17 @@ const styles = StyleSheet.create({
     marginTop: 250,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
+  },
+  desktopFormContainer: {
+    width: "45%",
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 60,
+  },
+  desktopFormContent: {
+    width: "100%",
+    maxWidth: 400,
   },
   title: {
     fontSize: 28,
@@ -220,6 +342,7 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     fontSize: 16,
+    color: "#333",
   },
   inputError: {
     borderWidth: 1,
@@ -241,6 +364,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 15,
     fontSize: 16,
+    color: "#333",
   },
   eyeIcon: {
     padding: 15,

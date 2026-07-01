@@ -17,7 +17,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import React, { useEffect, useState } from "react";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { Search, X } from "lucide-react-native";
 import axios from "axios";
 import API_URL from "@/constants/Api";
@@ -122,14 +122,37 @@ import { useTheme } from "@/hooks/useTheme";
 
 export default function TabTwoScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const { categoryId, dealId } = params;
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedDeal, setSelectedDeal] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(
     null
   );
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setcategories] = useState<any>(null);
+
+  useEffect(() => {
+    if (categoryId) {
+      setSelectedCategory(categoryId as string);
+      setSelectedDeal(null);
+      setSelectedSubcategory(null);
+      setSearchQuery("");
+      router.setParams({ categoryId: "" });
+    }
+  }, [categoryId]);
+
+  useEffect(() => {
+    if (dealId) {
+      setSelectedDeal(dealId as string);
+      setSelectedCategory(null);
+      setSelectedSubcategory(null);
+      setSearchQuery("");
+      router.setParams({ dealId: "" });
+    }
+  }, [dealId]);
   useEffect(() => {
     const fetchproduct = async () => {
       try {
@@ -162,15 +185,18 @@ export default function TabTwoScreen() {
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     setSelectedCategory(null);
+    setSelectedDeal(null);
     setSelectedSubcategory(null);
   };
   const clearSearch = () => {
     setSearchQuery("");
     setSelectedCategory(null);
+    setSelectedDeal(null);
     setSelectedSubcategory(null);
   };
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId);
+    setSelectedDeal(null);
     setSelectedSubcategory(null);
     setSearchQuery("");
   };
@@ -193,6 +219,42 @@ export default function TabTwoScreen() {
   const selectedcategorydata = selectedCategory
     ? categories?.find((cat: any) => cat._id === selectedCategory)
     : null;
+
+  const getFilteredProducts = (products: any) => {
+    if (!products) return [];
+    if (!selectedSubcategory) return products;
+    return products.filter((product: any) => 
+      product.name.toLowerCase().includes(selectedSubcategory.toLowerCase()) ||
+      product.description?.toLowerCase().includes(selectedSubcategory.toLowerCase())
+    );
+  };
+
+  const getAllDealProducts = () => {
+    if (!categories) return [];
+    const allProducts = categories.flatMap((cat: any) => cat.productId || []);
+    const uniqueProductsMap = new Map();
+    allProducts.forEach((prod: any) => {
+      if (prod && prod._id) {
+        uniqueProductsMap.set(prod._id.toString(), prod);
+      }
+    });
+    const uniqueProducts = Array.from(uniqueProductsMap.values());
+    
+    if (selectedDeal === "under599") {
+      return uniqueProducts.filter((prod: any) => {
+        const priceNum = typeof prod.price === "number" 
+          ? prod.price 
+          : parseFloat(String(prod.price).replace(/[^0-9.]/g, ""));
+        return priceNum < 599;
+      });
+    } else if (selectedDeal === "40-70off") {
+      return uniqueProducts.filter((prod: any) => {
+        const discountNum = parseFloat(String(prod.discount).replace(/[^0-9.]/g, ""));
+        return discountNum >= 40 && discountNum <= 70;
+      });
+    }
+    return [];
+  };
   const renderProducts = (products: any) => {
     return products?.map((product: any) => (
       <TouchableOpacity
@@ -236,7 +298,7 @@ export default function TabTwoScreen() {
         </View>
       </View>
       <ScrollView style={styles.content}>
-        {!selectedCategory && (
+        {!selectedCategory && !selectedDeal && (
           <View style={styles.categoriesGrid}>
             {filtercategories?.map((category: any) => (
               <TouchableOpacity
@@ -311,7 +373,31 @@ export default function TabTwoScreen() {
               )}
             </ScrollView>
             <View style={styles.productsGrid}>
-              {renderProducts(selectedcategorydata?.productId)}
+              {renderProducts(getFilteredProducts(selectedcategorydata?.productId))}
+            </View>
+          </View>
+        )}
+
+        {selectedDeal && (
+          <View style={styles.categoryDetail}>
+            <View style={styles.categoryHeader}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => setSelectedDeal(null)}
+              >
+                <Text style={[styles.backButtonText, { color: theme.primary }]}>← Back to Categories</Text>
+              </TouchableOpacity>
+              <Text style={[styles.categoryTitle, { color: theme.text }]}>
+                {selectedDeal === "under599" ? "Deals Under ₹599" : "Deals: 40-70% Off"}
+              </Text>
+            </View>
+
+            <View style={styles.productsGrid}>
+              {getAllDealProducts().length === 0 ? (
+                <Text style={[styles.emptyText, { color: theme.text }]}>No products found for this deal</Text>
+              ) : (
+                renderProducts(getAllDealProducts())
+              )}
             </View>
           </View>
         )}
