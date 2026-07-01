@@ -151,6 +151,35 @@ router.post("/save-for-later", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────
+// POST /cart/save-direct
+// Body: { userId, productId, size }
+// Saves a product directly to savedItems[] from the product detail page
+// ─────────────────────────────────────────────────────────────────
+router.post("/save-direct", async (req, res) => {
+  try {
+    const { userId, productId, size } = req.body;
+
+    if (!userId || !productId || !size) {
+      return res.status(400).json({ error: "userId, productId, and size are required" });
+    }
+
+    const result = await CartService.saveDirectly(userId, productId, size, req);
+
+    if (result.error) return res.status(result.status || 400).json({ error: result.error });
+
+    res.json({
+      success: true,
+      alreadySaved: result.alreadySaved || false,
+      cart: result.cart,
+      version: result.cart.version,
+    });
+  } catch (err) {
+    console.error("[CartRoutes] POST /cart/save-direct error:", err);
+    res.status(500).json({ error: "Failed to save product" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────
 // POST /cart/move-to-cart
 // Body: { userId, savedItemId, version }
 // Moves item from savedItems[] → activeItems[]

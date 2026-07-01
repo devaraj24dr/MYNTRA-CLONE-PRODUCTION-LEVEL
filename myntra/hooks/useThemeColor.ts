@@ -6,7 +6,9 @@ export function useThemeColor(
   colorName: keyof ThemeColors
 ) {
   const { currentTheme, theme } = useTheme();
-  const colorFromProps = props[currentTheme];
+  const isDark = currentTheme === "dark" || currentTheme === "amoled" || currentTheme.endsWith("_dark");
+  const activePropMode = isDark ? "dark" : "light";
+  const colorFromProps = props[activePropMode];
 
   if (colorFromProps) {
     return colorFromProps;

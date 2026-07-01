@@ -240,31 +240,31 @@ export default function Checkout() {
 
         {/* Validation Banner */}
         {validated && validationErrors.length > 0 && (
-          <View style={[styles.validationBanner, { backgroundColor: "#fee2e2", borderColor: "#ef4444" }]}>
-            <AlertTriangle size={18} color="#ef4444" />
+          <View style={[styles.validationBanner, { backgroundColor: theme.error + "15", borderColor: theme.error }]}>
+            <AlertTriangle size={18} color={theme.error} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.bannerTitle}>Cannot place order:</Text>
+              <Text style={[styles.bannerTitle, { color: theme.error }]}>Cannot place order:</Text>
               {validationErrors.map((e, i) => (
-                <Text key={i} style={styles.bannerItem}>• {e.detail}</Text>
+                <Text key={i} style={[styles.bannerItem, { color: theme.error }]}>• {e.detail}</Text>
               ))}
             </View>
           </View>
         )}
 
         {validated && validationErrors.length === 0 && (
-          <View style={[styles.validationBanner, { backgroundColor: "#dcfce7", borderColor: "#22c55e" }]}>
-            <CheckCircle size={18} color="#22c55e" />
-            <Text style={styles.bannerSuccess}>Cart validated — ready to order!</Text>
+          <View style={[styles.validationBanner, { backgroundColor: theme.success + "15", borderColor: theme.success }]}>
+            <CheckCircle size={18} color={theme.success} />
+            <Text style={[styles.bannerSuccess, { color: theme.success }]}>Cart validated — ready to order!</Text>
           </View>
         )}
 
         {validated && validationWarnings.length > 0 && (
-          <View style={[styles.validationBanner, { backgroundColor: "#fef9c3", borderColor: "#eab308" }]}>
-            <AlertTriangle size={18} color="#eab308" />
+          <View style={[styles.validationBanner, { backgroundColor: theme.warning + "15", borderColor: theme.warning }]}>
+            <AlertTriangle size={18} color={theme.warning} />
             <View style={{ flex: 1 }}>
-              <Text style={[styles.bannerTitle, { color: "#854d0e" }]}>Price changes:</Text>
+              <Text style={[styles.bannerTitle, { color: theme.warning }]}>Price changes:</Text>
               {validationWarnings.map((w, i) => (
-                <Text key={i} style={[styles.bannerItem, { color: "#854d0e" }]}>• {w.detail}</Text>
+                <Text key={i} style={[styles.bannerItem, { color: theme.warning }]}>• {w.detail}</Text>
               ))}
             </View>
           </View>
@@ -380,7 +380,7 @@ export default function Checkout() {
               </View>
               <View style={styles.summaryRow}>
                 <Text style={[styles.summaryLabel, { color: theme.secondaryText }]}>Shipping</Text>
-                <Text style={[styles.summaryValue, { color: "#22c55e" }]}>FREE</Text>
+                <Text style={[styles.summaryValue, { color: theme.success }]}>FREE</Text>
               </View>
               <View style={[styles.summaryRow, styles.totalRow, { borderTopColor: theme.border }]}>
                 <Text style={[styles.totalLabel, { color: theme.text }]}>Total</Text>
@@ -404,9 +404,9 @@ export default function Checkout() {
           disabled={placingOrder || validating}
         >
           {placingOrder || validating ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={theme.textOnPrimary} />
           ) : (
-            <Text style={styles.placeOrderButtonText}>
+            <Text style={[styles.placeOrderButtonText, { color: theme.textOnPrimary }]}>
               {validating ? "VALIDATING…" : "PLACE ORDER"}
             </Text>
           )}
@@ -447,9 +447,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 14,
   },
-  bannerTitle: { fontWeight: "700", fontSize: 14, color: "#b91c1c", marginBottom: 4 },
-  bannerItem: { fontSize: 13, color: "#b91c1c" },
-  bannerSuccess: { fontSize: 14, fontWeight: "600", color: "#166534" },
+  bannerTitle: { fontWeight: "700", fontSize: 14, marginBottom: 4 },
+  bannerItem: { fontSize: 13 },
+  bannerSuccess: { fontSize: 14, fontWeight: "600" },
 
   section: {
     borderRadius: 12,
@@ -524,5 +524,5 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
   },
-  placeOrderButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  placeOrderButtonText: { fontSize: 16, fontWeight: "bold" },
 });

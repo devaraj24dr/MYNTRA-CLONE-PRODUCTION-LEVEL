@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Heart, ShoppingBag } from "lucide-react-native";
+import { Heart, ShoppingBag, Bookmark } from "lucide-react-native";
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
@@ -31,6 +31,8 @@ export default function ProductDetails() {
   const { user } = useAuth();
   const [product, setproduct] = useState<any>(null);
   const [iswishlist, setiswishlist] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
   const [similarProducts, setSimilarProducts] = useState<any[]>([]);
   const [isSimilarLoading, setIsSimilarLoading] = useState(false);
   const { theme, currentTheme } = useTheme();
@@ -179,6 +181,36 @@ export default function ProductDetails() {
     }
   };
 
+  const handleSaveProduct = async () => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    if (!selectedSize) {
+      alert("Please select a size first");
+      return;
+    }
+    try {
+      setSaveLoading(true);
+      const res = await axios.post(`${API_URL}/cart/save-direct`, {
+        userId: user._id,
+        productId: id,
+        size: selectedSize,
+      });
+      if (res.data.alreadySaved) {
+        alert("This item is already in your Saved list!");
+      } else {
+        setIsSaved(true);
+        alert("Saved for later! Find it in your Bag → Saved items.");
+      }
+    } catch (error: any) {
+      const msg = error?.response?.data?.error || "Failed to save product. Please try again.";
+      alert(msg);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
   const handleAddToBag = async () => {
     if (!user) {
       router.push("/login");
@@ -260,7 +292,11 @@ export default function ProductDetails() {
                 key={index}
                 style={[
                   styles.paginationDot,
-                  currentImageIndex === index && styles.paginationDotActive,
+                  { backgroundColor: theme.text + "50" },
+                  currentImageIndex === index && [
+                    styles.paginationDotActive,
+                    { backgroundColor: theme.text },
+                  ],
                 ]}
               />
             ))}
@@ -301,7 +337,7 @@ export default function ProductDetails() {
                   style={[
                     styles.sizeButton,
                     { borderColor: theme.border },
-                    selectedSize === size && { borderColor: theme.primary, backgroundColor: currentTheme === "dark" ? "#2a151b" : "#fff4f4" },
+                    selectedSize === size && { borderColor: theme.primary, backgroundColor: theme.primary + "15" },
                   ]}
                   onPress={() => setSelectedSize(size)}
                 >
@@ -320,7 +356,7 @@ export default function ProductDetails() {
           </View>
 
           {/* Similar Products Section */}
-          <View style={styles.similarSection}>
+          <View style={[styles.similarSection, { borderTopColor: theme.border }]}>
             <Text style={[styles.similarTitle, { color: theme.text }]}>Similar Products</Text>
             {isSimilarLoading ? (
               <ActivityIndicator size="small" color={theme.primary} />
@@ -331,7 +367,7 @@ export default function ProductDetails() {
                 {similarProducts.map((item: any, idx: number) => (
                   <TouchableOpacity
                     key={`${item._id}-${idx}`}
-                    style={[styles.similarCard, { backgroundColor: theme.card }]}
+                    style={[styles.similarCard, { backgroundColor: theme.card, borderColor: theme.border }]}
                     onPress={() => handleSimilarPress(item._id)}
                   >
                     <Image source={{ uri: item.images?.[0] }} style={styles.similarImage} />
@@ -350,16 +386,33 @@ export default function ProductDetails() {
 
       <View style={[styles.footer, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
         <TouchableOpacity
-          style={styles.addToBagButton}
+          style={[styles.saveButton, { backgroundColor: theme.surface, borderColor: theme.primary }]}
+          onPress={handleSaveProduct}
+          disabled={saveLoading || isSaved}
+        >
+          {saveLoading ? (
+            <ActivityIndicator size="small" color={theme.primary} />
+          ) : (
+            <>
+              <Bookmark size={20} color={isSaved ? theme.primary : theme.secondaryText} fill={isSaved ? theme.primary : "none"} />
+              <Text style={[styles.saveButtonText, { color: isSaved ? theme.primary : theme.secondaryText }]}>
+                {isSaved ? "SAVED" : "SAVE"}
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.addToBagButton, { backgroundColor: theme.primary }]}
           onPress={handleAddToBag}
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
+            <ActivityIndicator size="small" color={theme.textOnPrimary} />
           ) : (
             <>
-              <ShoppingBag size={20} color="#fff" />
-              <Text style={styles.addToBagText}>ADD TO BAG</Text>
+              <ShoppingBag size={20} color={theme.textOnPrimary} />
+              <Text style={[styles.addToBagText, { color: theme.textOnPrimary }]}>ADD TO BAG</Text>
             </>
           )}
         </TouchableOpacity>
@@ -395,11 +448,10 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "rgba(255, 255, 255, 0.5)",
+    backgroundColor: "transparent",
     marginHorizontal: 4,
   },
   paginationDotActive: {
-    backgroundColor: "#fff",
     width: 10,
     height: 10,
     borderRadius: 5,
@@ -469,7 +521,6 @@ const styles = StyleSheet.create({
   similarSection: {
     marginTop: 25,
     borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
     paddingTop: 20,
   },
   similarTitle: {
@@ -489,7 +540,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: "#f0f0f0",
     paddingBottom: 10,
   },
   similarImage: {
@@ -515,9 +565,26 @@ const styles = StyleSheet.create({
   footer: {
     padding: 15,
     borderTopWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    alignItems: "center",
+  },
+  saveButton: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    gap: 8,
+  },
+  saveButtonText: {
+    fontSize: 14,
+    fontWeight: "bold",
   },
   addToBagButton: {
-    backgroundColor: "#ff3f6c",
+    flex: 1,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
@@ -526,7 +593,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   addToBagText: {
-    color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
   },

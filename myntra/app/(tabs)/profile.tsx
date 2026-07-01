@@ -70,7 +70,7 @@ export default function Profile() {
       <ScrollView style={styles.content}>
         <View style={[styles.userInfo, { backgroundColor: theme.card }]}>
           <View style={[styles.avatar, { backgroundColor: theme.primary }]}>
-            <User size={40} color="#fff" />
+            <User size={40} color={theme.textOnPrimary} />
           </View>
           <View style={styles.userDetails}>
             <Text style={[styles.userName, { color: theme.text }]}>{user.name}</Text>
@@ -96,7 +96,7 @@ export default function Profile() {
 
         <View style={[styles.themeSection, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <Text style={[styles.themeLabel, { color: theme.text }]}>Dark Mode preference</Text>
-          <ThemeToggle />
+          <ThemeToggle label="Theme Mode" />
         </View>
 
         <TouchableOpacity 
@@ -144,7 +144,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   loginButtonText: {
-    color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -190,14 +189,14 @@ const styles = StyleSheet.create({
     marginLeft: 15,
   },
   themeSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: "column",
+    alignItems: "stretch",
     padding: 15,
     marginTop: 20,
     borderWidth: 1,
     borderLeftWidth: 0,
     borderRightWidth: 0,
+    gap: 8,
   },
   themeLabel: {
     fontSize: 16,

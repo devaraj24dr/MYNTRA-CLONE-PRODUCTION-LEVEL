@@ -37,7 +37,8 @@ function RootLayoutStack() {
 function RootLayoutContent() {
   const { currentTheme, theme } = useTheme();
 
-  const navTheme = currentTheme === "dark" ? DarkTheme : DefaultTheme;
+  const isDark = currentTheme === "dark" || currentTheme === "amoled" || currentTheme.endsWith("_dark");
+  const navTheme = isDark ? DarkTheme : DefaultTheme;
   const customNavTheme = {
     ...navTheme,
     colors: {
@@ -55,31 +56,37 @@ function RootLayoutContent() {
       <AuthProvider>
         <NotificationProvider>
           <RootLayoutStack />
-          <StatusBar style={currentTheme === "dark" ? "light" : "dark"} />
+          <StatusBar style={isDark ? "light" : "dark"} />
         </NotificationProvider>
       </AuthProvider>
     </NavThemeProvider>
   );
 }
 
-export default function RootLayout() {
+function RootLayoutInner() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
+  const { isThemeLoading } = useTheme();
 
   useEffect(() => {
-    if (loaded) {
+    if (loaded && !isThemeLoading) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [loaded, isThemeLoading]);
 
-  if (!loaded) {
+  if (!loaded || isThemeLoading) {
     return null;
   }
 
+  return <RootLayoutContent />;
+}
+
+export default function RootLayout() {
   return (
     <ThemeProvider>
-      <RootLayoutContent />
+      <RootLayoutInner />
     </ThemeProvider>
   );
 }
+

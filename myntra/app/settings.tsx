@@ -30,6 +30,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotificationsContext } from "@/context/NotificationContext";
 import axios from "axios";
 import API_URL from "@/constants/Api";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -159,8 +160,8 @@ export default function SettingsScreen() {
           {/* Order Updates */}
           <View style={[styles.row, { borderBottomColor: theme.border }]}>
             <View style={styles.rowLeft}>
-              <View style={[styles.iconWrapper, { backgroundColor: "#E6F4EA" }]}>
-                <Package size={20} color="#137333" />
+              <View style={[styles.iconWrapper, { backgroundColor: theme.success + "15" }]}>
+                <Package size={20} color={theme.success} />
               </View>
               <View style={styles.labelWrapper}>
                 <Text style={[styles.label, { color: theme.text }]}>Order Updates</Text>
@@ -171,15 +172,15 @@ export default function SettingsScreen() {
               value={preferences.orderUpdates}
               onValueChange={() => handleTogglePreference("orderUpdates")}
               trackColor={{ false: theme.border, true: theme.primary }}
-              thumbColor={Platform.OS === "android" ? "#fff" : undefined}
+              thumbColor={Platform.OS === "android" ? theme.background : undefined}
             />
           </View>
 
           {/* Promotions */}
           <View style={[styles.row, { borderBottomColor: theme.border }]}>
             <View style={styles.rowLeft}>
-              <View style={[styles.iconWrapper, { backgroundColor: "#FEF7E0" }]}>
-                <Zap size={20} color="#B06000" />
+              <View style={[styles.iconWrapper, { backgroundColor: theme.warning + "15" }]}>
+                <Zap size={20} color={theme.warning} />
               </View>
               <View style={styles.labelWrapper}>
                 <Text style={[styles.label, { color: theme.text }]}>Promotions & Sales</Text>
@@ -190,15 +191,15 @@ export default function SettingsScreen() {
               value={preferences.promotions}
               onValueChange={() => handleTogglePreference("promotions")}
               trackColor={{ false: theme.border, true: theme.primary }}
-              thumbColor={Platform.OS === "android" ? "#fff" : undefined}
+              thumbColor={Platform.OS === "android" ? theme.background : undefined}
             />
           </View>
 
           {/* Price Drops */}
           <View style={[styles.row, { borderBottomColor: theme.border }]}>
             <View style={styles.rowLeft}>
-              <View style={[styles.iconWrapper, { backgroundColor: "#FCE8E6" }]}>
-                <Tag size={20} color="#C5221F" />
+              <View style={[styles.iconWrapper, { backgroundColor: theme.error + "15" }]}>
+                <Tag size={20} color={theme.error} />
               </View>
               <View style={styles.labelWrapper}>
                 <Text style={[styles.label, { color: theme.text }]}>Wishlist Price Drops</Text>
@@ -209,15 +210,15 @@ export default function SettingsScreen() {
               value={preferences.priceDrops}
               onValueChange={() => handleTogglePreference("priceDrops")}
               trackColor={{ false: theme.border, true: theme.primary }}
-              thumbColor={Platform.OS === "android" ? "#fff" : undefined}
+              thumbColor={Platform.OS === "android" ? theme.background : undefined}
             />
           </View>
 
           {/* Cart Reminders */}
           <View style={styles.row}>
             <View style={styles.rowLeft}>
-              <View style={[styles.iconWrapper, { backgroundColor: "#E8F0FE" }]}>
-                <Clock size={20} color="#1A73E8" />
+              <View style={[styles.iconWrapper, { backgroundColor: theme.info + "15" }]}>
+                <Clock size={20} color={theme.info} />
               </View>
               <View style={styles.labelWrapper}>
                 <Text style={[styles.label, { color: theme.text }]}>Cart Reminders</Text>
@@ -228,9 +229,17 @@ export default function SettingsScreen() {
               value={preferences.cartReminders}
               onValueChange={() => handleTogglePreference("cartReminders")}
               trackColor={{ false: theme.border, true: theme.primary }}
-              thumbColor={Platform.OS === "android" ? "#fff" : undefined}
+              thumbColor={Platform.OS === "android" ? theme.background : undefined}
             />
           </View>
+        </View>
+
+        {/* Theme Preference Section */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.secondaryText }]}>THEME PREFERENCES</Text>
+        </View>
+        <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <ThemeToggle />
         </View>
 
         {/* Device Registration Section */}
@@ -369,7 +378,7 @@ export default function SettingsScreen() {
         </View>
       </ScrollView>
       {isLoading && (
-        <View style={styles.loadingOverlay}>
+        <View style={[styles.loadingOverlay, { backgroundColor: theme.text + "33" }]}>
           <ActivityIndicator size="large" color={theme.primary} />
         </View>
       )}

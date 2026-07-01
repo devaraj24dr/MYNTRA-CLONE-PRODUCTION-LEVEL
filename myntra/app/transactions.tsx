@@ -205,21 +205,21 @@ export default function TransactionsScreen() {
 
   // Render Status Badge
   const renderStatusBadge = (status: string) => {
-    let bgColor = "#E6F4EA";
-    let textColor = "#137333";
+    let bgColor = theme.success + "15";
+    let textColor = theme.success;
     let Icon = CheckCircle2;
 
     if (status === "failed") {
-      bgColor = "#FCE8E6";
-      textColor = "#C5221F";
+      bgColor = theme.error + "15";
+      textColor = theme.error;
       Icon = XCircle;
     } else if (status === "refunded") {
-      bgColor = "#E8F0FE";
-      textColor = "#1A73E8";
+      bgColor = theme.info + "15";
+      textColor = theme.info;
       Icon = AlertCircle;
     } else if (status === "pending") {
-      bgColor = "#FEF7E0";
-      textColor = "#B06000";
+      bgColor = theme.warning + "15";
+      textColor = theme.warning;
       Icon = AlertCircle;
     }
 
@@ -351,7 +351,7 @@ export default function TransactionsScreen() {
                 ]}
                 onPress={() => setStatusFilter(s)}
               >
-                <Text style={[styles.chipText, { color: statusFilter === s ? "#fff" : theme.text }]}>
+                <Text style={[styles.chipText, { color: statusFilter === s ? theme.textOnPrimary : theme.text }]}>
                   {s.toUpperCase()}
                 </Text>
               </TouchableOpacity>
@@ -372,7 +372,7 @@ export default function TransactionsScreen() {
                 ]}
                 onPress={() => setMethodFilter(m)}
               >
-                <Text style={[styles.chipText, { color: methodFilter === m ? "#fff" : theme.text }]}>
+                <Text style={[styles.chipText, { color: methodFilter === m ? theme.textOnPrimary : theme.text }]}>
                   {m.toUpperCase()}
                 </Text>
               </TouchableOpacity>
@@ -415,7 +415,7 @@ export default function TransactionsScreen() {
                   setEndDate("");
                 }}
               >
-                <Text style={styles.resetDateText}>Reset</Text>
+                <Text style={[styles.resetDateText, { color: theme.textOnPrimary }]}>Reset</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -654,7 +654,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   resetDateText: {
-    color: "#fff",
     fontSize: 11,
     fontWeight: "bold",
   },

@@ -332,6 +332,54 @@ async function moveToCart(userId, savedItemId, clientVersion, req) {
 }
 
 /**
+ * POST /cart/save-direct
+ * Directly add a product to savedItems[] from the product detail page,
+ * without requiring the item to already be in activeItems[].
+ */
+async function saveDirectly(userId, productId, size, req) {
+  const product = await Product.findById(productId);
+  if (!product) return { error: "Product not found", status: 404 };
+
+  // Ensure cart exists
+  await Cart.findOneAndUpdate(
+    { userId },
+    { $setOnInsert: { userId, version: 0, activeItems: [], savedItems: [] } },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+
+  const cart = await Cart.findOne({ userId });
+
+  // Dedup: check if this product+size is already in savedItems
+  const alreadySaved = cart.savedItems.some(
+    (i) => i.productId.toString() === productId.toString() && i.size === size
+  );
+  if (alreadySaved) {
+    return { alreadySaved: true, cart: await getOrCreateCart(userId) };
+  }
+
+  const savedItem = {
+    productId,
+    size,
+    quantity: 1,
+    priceAtAdd: product.price,
+    addedAt: new Date(),
+  };
+
+  const updatedCart = await Cart.findOneAndUpdate(
+    { userId },
+    {
+      $push: { savedItems: savedItem },
+      $inc: { version: 1 },
+      $set: { lastSyncedAt: new Date() },
+    },
+    { new: true }
+  );
+
+  await audit(userId, "Save Direct", productId, updatedCart.version, { size, quantity: 1 }, req);
+  return { cart: await getOrCreateCart(userId) };
+}
+
+/**
  * Synchronize cart client version with server.
  */
 async function synchronizeCart(userId, clientVersion) {
@@ -349,5 +397,6 @@ module.exports = {
   removeItem,
   moveToSaveForLater,
   moveToCart,
+  saveDirectly,
   synchronizeCart,
 };

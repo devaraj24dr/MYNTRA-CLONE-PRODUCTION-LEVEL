@@ -16,12 +16,13 @@ import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { IconSymbol } from "@/components/ui/IconSymbol";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Search, X } from "lucide-react-native";
 import axios from "axios";
 import API_URL from "@/constants/Api";
 import { useTheme } from "@/hooks/useTheme";
+import { ThemeColors } from "@/types/theme";
 
 // const categories = [
 //   {
@@ -123,8 +124,9 @@ import { useTheme } from "@/hooks/useTheme";
 export default function TabTwoScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { categoryId, dealId } = params;
+  const { categoryId, dealId, focusSearch } = params;
   const { theme } = useTheme();
+  const styles = useMemo(() => getStyles(theme), [theme]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedDeal, setSelectedDeal] = useState<string | null>(null);
@@ -133,6 +135,17 @@ export default function TabTwoScreen() {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setcategories] = useState<any>(null);
+
+  const searchInputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    if (focusSearch === "true") {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 200);
+      router.setParams({ focusSearch: "" });
+    }
+  }, [focusSearch]);
 
   useEffect(() => {
     if (categoryId) {
@@ -284,6 +297,7 @@ export default function TabTwoScreen() {
         <View style={[styles.searchInputContainer, { backgroundColor: theme.surface }]}>
           <Search size={20} color={theme.secondaryText} style={styles.searchIcon} />
           <TextInput
+            ref={searchInputRef}
             style={[styles.searchInput, { color: theme.text }]}
             placeholder="Search for products, brands and more"
             placeholderTextColor={theme.secondaryText}
@@ -363,7 +377,7 @@ export default function TabTwoScreen() {
                     <Text
                       style={[
                         styles.subcategoryButtonText,
-                        { color: selectedSubcategory === sub ? "#fff" : theme.text },
+                        { color: selectedSubcategory === sub ? theme.textOnPrimary : theme.text },
                       ]}
                     >
                       {sub}
@@ -406,188 +420,194 @@ export default function TabTwoScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  loaderContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  header: {
-    padding: 15,
-    paddingTop: 50,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#3e3e3e",
-  },
-  searchContainer: {
-    padding: 15,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  searchInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 10,
-    padding: 10,
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: "#3e3e3e",
-  },
-  content: {
-    flex: 1,
-  },
-  categoriesGrid: {
-    padding: 15,
-  },
-  categoryCard: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
+const getStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    loaderContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: theme.background,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-    overflow: "hidden",
-  },
-  categoryImage: {
-    width: "100%",
-    height: 150,
-  },
-  categoryInfo: {
-    padding: 15,
-  },
-  categoryName: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#3e3e3e",
-    marginBottom: 10,
-  },
-  subcategories: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  subcategoryTag: {
-    backgroundColor: "#f5f5f5",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  subcategoryText: {
-    fontSize: 14,
-    color: "#666",
-  },
-  categoryDetail: {
-    flex: 1,
-    padding: 15,
-  },
-  categoryHeader: {
-    marginBottom: 15,
-  },
-  backButton: {
-    marginBottom: 10,
-  },
-  backButtonText: {
-    color: "#ff3f6c",
-    fontSize: 16,
-  },
-  categoryTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#3e3e3e",
-  },
-  subcategoriesScroll: {
-    marginBottom: 15,
-  },
-  subcategoryButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: "#f5f5f5",
-    marginRight: 10,
-  },
-  selectedSubcategory: {
-    backgroundColor: "#ff3f6c",
-  },
-  subcategoryButtonText: {
-    fontSize: 14,
-    color: "#3e3e3e",
-  },
-  selectedSubcategoryText: {
-    color: "#fff",
-  },
-  productsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-  },
-  productCard: {
-    width: "48%",
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-    overflow: "hidden",
-  },
-  productImage: {
-    width: "100%",
-    height: 200,
-    resizeMode: "cover",
-  },
-  productInfo: {
-    padding: 10,
-  },
-  brandName: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 4,
-  },
-  productName: {
-    fontSize: 16,
-    color: "#3e3e3e",
-    marginBottom: 8,
-  },
-  priceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  price: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#3e3e3e",
-    marginRight: 8,
-  },
-  discount: {
-    fontSize: 14,
-    color: "#ff3f6c",
-  },
-});
+    header: {
+      padding: 15,
+      paddingTop: 50,
+      backgroundColor: theme.card,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    headerTitle: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: theme.text,
+    },
+    searchContainer: {
+      padding: 15,
+      backgroundColor: theme.card,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    searchInputContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: theme.surface,
+      borderRadius: 10,
+      padding: 10,
+    },
+    searchIcon: {
+      marginRight: 10,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 16,
+      color: theme.text,
+    },
+    content: {
+      flex: 1,
+    },
+    categoriesGrid: {
+      padding: 15,
+    },
+    categoryCard: {
+      backgroundColor: theme.card,
+      borderRadius: 10,
+      marginBottom: 15,
+      borderWidth: 1,
+      borderColor: theme.border,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 3.84,
+      elevation: 3,
+      overflow: "hidden",
+    },
+    categoryImage: {
+      width: "100%",
+      height: 150,
+    },
+    categoryInfo: {
+      padding: 15,
+    },
+    categoryName: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: theme.text,
+      marginBottom: 10,
+    },
+    subcategories: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+    },
+    subcategoryTag: {
+      backgroundColor: theme.surface,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 15,
+      marginRight: 8,
+      marginBottom: 8,
+    },
+    subcategoryText: {
+      fontSize: 14,
+      color: theme.secondaryText,
+    },
+    categoryDetail: {
+      flex: 1,
+      padding: 15,
+    },
+    categoryHeader: {
+      marginBottom: 15,
+    },
+    backButton: {
+      marginBottom: 10,
+    },
+    backButtonText: {
+      color: theme.primary,
+      fontSize: 16,
+    },
+    categoryTitle: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: theme.text,
+    },
+    subcategoriesScroll: {
+      marginBottom: 15,
+    },
+    subcategoryButton: {
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 20,
+      backgroundColor: theme.surface,
+      marginRight: 10,
+    },
+    selectedSubcategory: {
+      backgroundColor: theme.primary,
+    },
+    subcategoryButtonText: {
+      fontSize: 14,
+      color: theme.text,
+    },
+    selectedSubcategoryText: {
+      color: theme.textOnPrimary,
+    },
+    productsGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
+    },
+    productCard: {
+      width: "48%",
+      backgroundColor: theme.card,
+      borderRadius: 10,
+      marginBottom: 15,
+      borderWidth: 1,
+      borderColor: theme.border,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 3.84,
+      elevation: 3,
+      overflow: "hidden",
+    },
+    productImage: {
+      width: "100%",
+      height: 200,
+      resizeMode: "cover",
+    },
+    productInfo: {
+      padding: 10,
+    },
+    brandName: {
+      fontSize: 14,
+      color: theme.secondaryText,
+      marginBottom: 4,
+    },
+    productName: {
+      fontSize: 16,
+      color: theme.text,
+      marginBottom: 8,
+    },
+    priceRow: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    price: {
+      fontSize: 16,
+      fontWeight: "bold",
+      color: theme.text,
+      marginRight: 8,
+    },
+    discount: {
+      fontSize: 14,
+      color: theme.primary,
+    },
+    emptyText: {
+      fontSize: 16,
+      color: theme.secondaryText,
+      textAlign: "center",
+      marginTop: 20,
+    },
+  });
+

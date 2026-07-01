@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import { useRouter } from "expo-router";
 import { Eye, EyeOff } from "lucide-react-native";
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/hooks/useTheme";
+import { ThemeColors } from "@/types/theme";
 
 export default function Signup() {
   const { Signup } = useAuth();
@@ -30,7 +32,9 @@ export default function Signup() {
     email: "",
     password: "",
   });
+  const { theme } = useTheme();
 
+  const styles = useMemo(() => getStyles(theme), [theme]);
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
 
@@ -103,7 +107,7 @@ export default function Signup() {
               <TextInput
                 style={[styles.input, errors.fullName && styles.inputError]}
                 placeholder="Full Name"
-                placeholderTextColor="#999"
+                placeholderTextColor={theme.secondaryText}
                 value={formData.fullName}
                 onChangeText={(text) =>
                   setFormData({ ...formData, fullName: text })
@@ -118,7 +122,7 @@ export default function Signup() {
               <TextInput
                 style={[styles.input, errors.email && styles.inputError]}
                 placeholder="Email"
-                placeholderTextColor="#999"
+                placeholderTextColor={theme.secondaryText}
                 value={formData.email}
                 onChangeText={(text) => setFormData({ ...formData, email: text })}
                 keyboardType="email-address"
@@ -139,7 +143,7 @@ export default function Signup() {
                 <TextInput
                   style={styles.passwordInput}
                   placeholder="Password"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={theme.secondaryText}
                   value={formData.password}
                   onChangeText={(text) =>
                     setFormData({ ...formData, password: text })
@@ -151,9 +155,9 @@ export default function Signup() {
                   onPress={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOff size={20} color="#666" />
+                    <EyeOff size={20} color={theme.secondaryText} />
                   ) : (
-                    <Eye size={20} color="#666" />
+                    <Eye size={20} color={theme.secondaryText} />
                   )}
                 </TouchableOpacity>
               </View>
@@ -168,7 +172,7 @@ export default function Signup() {
               disabled={isloading}
             >
               {isloading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={theme.textOnPrimary} />
               ) : (
                 <Text style={styles.buttonText}>SIGN UP</Text>
               )}
@@ -197,7 +201,7 @@ export default function Signup() {
               <TextInput
                 style={[styles.input, errors.fullName && styles.inputError]}
                 placeholder="Full Name"
-                placeholderTextColor="#999"
+                placeholderTextColor={theme.secondaryText}
                 value={formData.fullName}
                 onChangeText={(text) =>
                   setFormData({ ...formData, fullName: text })
@@ -212,7 +216,7 @@ export default function Signup() {
               <TextInput
                 style={[styles.input, errors.email && styles.inputError]}
                 placeholder="Email"
-                placeholderTextColor="#999"
+                placeholderTextColor={theme.secondaryText}
                 value={formData.email}
                 onChangeText={(text) => setFormData({ ...formData, email: text })}
                 keyboardType="email-address"
@@ -233,7 +237,7 @@ export default function Signup() {
                 <TextInput
                   style={styles.passwordInput}
                   placeholder="Password"
-                  placeholderTextColor="#999"
+                  placeholderTextColor={theme.secondaryText}
                   value={formData.password}
                   onChangeText={(text) =>
                     setFormData({ ...formData, password: text })
@@ -245,9 +249,9 @@ export default function Signup() {
                   onPress={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOff size={20} color="#666" />
+                    <EyeOff size={20} color={theme.secondaryText} />
                   ) : (
-                    <Eye size={20} color="#666" />
+                    <Eye size={20} color={theme.secondaryText} />
                   )}
                 </TouchableOpacity>
               </View>
@@ -262,7 +266,7 @@ export default function Signup() {
               disabled={isloading}
             >
               {isloading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={theme.textOnPrimary} />
               ) : (
                 <Text style={styles.buttonText}>SIGN UP</Text>
               )}
@@ -281,112 +285,113 @@ export default function Signup() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  desktopContainer: {
-    flexDirection: "row",
-    alignItems: "stretch",
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  backgroundImage: {
-    width: "100%",
-    height: 300,
-    position: "absolute",
-    top: 0,
-  },
-  desktopImage: {
-    position: "relative",
-    width: "55%",
-    height: "100%",
-  },
-  formContainer: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    marginTop: 250,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-  },
-  desktopFormContainer: {
-    width: "45%",
-    backgroundColor: "#fff",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 60,
-  },
-  desktopFormContent: {
-    width: "100%",
-    maxWidth: 400,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 10,
-    color: "#3e3e3e",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 30,
-  },
-  inputGroup: {
-    marginBottom: 15,
-  },
-  input: {
-    backgroundColor: "#f5f5f5",
-    padding: 15,
-    borderRadius: 10,
-    fontSize: 16,
-    color: "#333",
-  },
-  inputError: {
-    borderWidth: 1,
-    borderColor: "#ff3f6c",
-  },
-  errorText: {
-    color: "#ff3f6c",
-    fontSize: 12,
-    marginTop: 5,
-    marginLeft: 5,
-  },
-  passwordContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 10,
-  },
-  passwordInput: {
-    flex: 1,
-    padding: 15,
-    fontSize: 16,
-    color: "#333",
-  },
-  eyeIcon: {
-    padding: 15,
-  },
-  button: {
-    backgroundColor: "#ff3f6c",
-    padding: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginTop: 20,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  loginLink: {
-    marginTop: 20,
-    alignItems: "center",
-  },
-  loginText: {
-    color: "#ff3f6c",
-    fontSize: 16,
-  },
-});
+const getStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    desktopContainer: {
+      flexDirection: "row",
+      alignItems: "stretch",
+    },
+    scrollContent: {
+      flexGrow: 1,
+    },
+    backgroundImage: {
+      width: "100%",
+      height: 300,
+      position: "absolute",
+      top: 0,
+    },
+    desktopImage: {
+      position: "relative",
+      width: "55%",
+      height: "100%",
+    },
+    formContainer: {
+      flex: 1,
+      padding: 20,
+      backgroundColor: theme.card + "E6", // 90% opacity overlay
+      marginTop: 250,
+      borderTopLeftRadius: 30,
+      borderTopRightRadius: 30,
+    },
+    desktopFormContainer: {
+      width: "45%",
+      backgroundColor: theme.card,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 60,
+    },
+    desktopFormContent: {
+      width: "100%",
+      maxWidth: 400,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: "bold",
+      marginBottom: 10,
+      color: theme.text,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: theme.secondaryText,
+      marginBottom: 30,
+    },
+    inputGroup: {
+      marginBottom: 15,
+    },
+    input: {
+      backgroundColor: theme.surface,
+      padding: 15,
+      borderRadius: 10,
+      fontSize: 16,
+      color: theme.text,
+    },
+    inputError: {
+      borderWidth: 1,
+      borderColor: theme.error,
+    },
+    errorText: {
+      color: theme.error,
+      fontSize: 12,
+      marginTop: 5,
+      marginLeft: 5,
+    },
+    passwordContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: theme.surface,
+      borderRadius: 10,
+    },
+    passwordInput: {
+      flex: 1,
+      padding: 15,
+      fontSize: 16,
+      color: theme.text,
+    },
+    eyeIcon: {
+      padding: 15,
+    },
+    button: {
+      backgroundColor: theme.primary,
+      padding: 15,
+      borderRadius: 10,
+      alignItems: "center",
+      marginTop: 20,
+    },
+    buttonText: {
+      color: theme.textOnPrimary,
+      fontSize: 16,
+      fontWeight: "bold",
+    },
+    loginLink: {
+      marginTop: 20,
+      alignItems: "center",
+    },
+    loginText: {
+      color: theme.primary,
+      fontSize: 16,
+    },
+  });

@@ -88,6 +88,90 @@ const products = [
     ],
     category: "Women",
   },
+  {
+    name: "Formal Navy Blazer",
+    brand: "Van Heusen",
+    price: 3999,
+    discount: "20% OFF",
+    description: "A structured slim-fit single-breasted blazer for formal corporate styling.",
+    sizes: ["38", "40", "42", "44"],
+    images: [
+      "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=500&auto=format&fit=crop",
+    ],
+    category: "Men",
+  },
+  {
+    name: "High-Waist Blue Jeans",
+    brand: "Zara",
+    price: 2299,
+    discount: "30% OFF",
+    description: "Classic high-waist straight fit blue denim jeans.",
+    sizes: ["28", "30", "32"],
+    images: [
+      "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=500&auto=format&fit=crop",
+    ],
+    category: "Women",
+  },
+  {
+    name: "Casual Cotton Top",
+    brand: "Mango",
+    price: 999,
+    discount: "15% OFF",
+    description: "Comfortable breathable daily wear top for women.",
+    sizes: ["XS", "S", "M", "L"],
+    images: [
+      "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=500&auto=format&fit=crop",
+    ],
+    category: "Women",
+  },
+  {
+    name: "Formal Leather Oxford Shoes",
+    brand: "Clarks",
+    price: 4499,
+    discount: "25% OFF",
+    description: "Premium genuine leather oxford formal dress shoes.",
+    sizes: ["UK7", "UK8", "UK9", "UK10"],
+    images: [
+      "https://images.unsplash.com/photo-1533867617858-e7b97e060509?w=500&auto=format&fit=crop",
+    ],
+    category: "Footwear",
+  },
+  {
+    name: "Running Shoes Sport",
+    brand: "Adidas",
+    price: 5999,
+    discount: "35% OFF",
+    description: "High-performance running shoes with cloud foam comfort technology.",
+    sizes: ["UK7", "UK8", "UK9", "UK10"],
+    images: [
+      "https://images.unsplash.com/photo-1587563876166-12f71130b5a3?w=500&auto=format&fit=crop",
+    ],
+    category: "Footwear",
+  },
+  {
+    name: "Superheroes Print T-Shirt",
+    brand: "USPA Kids",
+    price: 599,
+    discount: "50% OFF",
+    description: "Fun character printed graphic t-shirt for kids.",
+    sizes: ["5-6Y", "7-8Y", "9-10Y"],
+    images: [
+      "https://images.unsplash.com/photo-1519457431-44ccd64a579b?w=500&auto=format&fit=crop",
+    ],
+    category: "Kids",
+  },
+  {
+    name: "Girls Cotton Frock",
+    brand: "Mothercare",
+    price: 1199,
+    discount: "40% OFF",
+    description: "Lightweight and adorable floral cotton frock for girls.",
+    sizes: ["4-5Y", "5-6Y", "6-7Y"],
+    images: [
+      "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=500&auto=format&fit=crop",
+    ],
+    category: "Kids",
+  },
 ];
 
 async function seed() {
@@ -110,25 +194,42 @@ async function seed() {
         name: "Men",
         subcategory: ["T-Shirts", "Shirts", "Jeans", "Trousers", "Suits"],
         image: "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=500&auto=format&fit=crop",
-        productId: [insertedProducts[0]._id, insertedProducts[1]._id, insertedProducts[4]._id],
+        productId: [
+          insertedProducts[0]._id, 
+          insertedProducts[1]._id, 
+          insertedProducts[4]._id,
+          insertedProducts[6]._id
+        ],
       },
       {
         name: "Women",
         subcategory: ["Dresses", "Tops", "Ethnic Wear", "Western Wear"],
         image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&auto=format&fit=crop",
-        productId: [insertedProducts[2]._id, insertedProducts[5]._id],
+        productId: [
+          insertedProducts[2]._id, 
+          insertedProducts[5]._id,
+          insertedProducts[7]._id,
+          insertedProducts[8]._id
+        ],
       },
       {
         name: "Footwear",
         subcategory: ["Sneakers", "Formal Shoes", "Sports Shoes", "Sandals"],
         image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=500&auto=format&fit=crop",
-        productId: [insertedProducts[3]._id],
+        productId: [
+          insertedProducts[3]._id,
+          insertedProducts[9]._id,
+          insertedProducts[10]._id
+        ],
       },
       {
         name: "Kids",
         subcategory: ["Boys Clothing", "Girls Clothing", "Infants", "Toys"],
         image: "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=500&auto=format&fit=crop",
-        productId: [],
+        productId: [
+          insertedProducts[11]._id,
+          insertedProducts[12]._id
+        ],
       },
     ];
 

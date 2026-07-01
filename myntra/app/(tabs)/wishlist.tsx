@@ -3,7 +3,7 @@ import axios from "axios";
 import API_URL from "@/constants/Api";
 import { useRouter } from "expo-router";
 import { Heart, Trash2 } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -14,13 +14,16 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useTheme } from "@/hooks/useTheme";
+import { ThemeColors } from "@/types/theme";
 
 export default function Wishlist() {
   const router = useRouter();
   const { user } = useAuth();
   const [wishlist, setwishlist] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { theme, currentTheme } = useTheme();
+  const { theme } = useTheme();
+
+  const styles = useMemo(() => getStyles(theme), [theme]);
 
   useEffect(() => {
     fetchproduct();
@@ -54,17 +57,17 @@ export default function Wishlist() {
 
   if (!user) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Wishlist</Text>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Wishlist</Text>
         </View>
         <View style={styles.emptyState}>
           <Heart size={64} color={theme.primary} />
-          <Text style={[styles.emptyTitle, { color: theme.text }]}>
+          <Text style={styles.emptyTitle}>
             Please login to view your wishlist
           </Text>
           <TouchableOpacity
-            style={[styles.loginButton, { backgroundColor: theme.primary }]}
+            style={styles.loginButton}
             onPress={() => router.push("/login")}
           >
             <Text style={styles.loginButtonText}>LOGIN</Text>
@@ -76,28 +79,28 @@ export default function Wishlist() {
 
   if (isLoading) {
     return (
-      <View style={[styles.loaderContainer, { backgroundColor: theme.background }]}>
+      <View style={styles.loaderContainer}>
         <ActivityIndicator size="large" color={theme.primary} />
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>Wishlist</Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Wishlist</Text>
       </View>
 
       <ScrollView style={styles.content}>
         {wishlist?.filter((item: any) => item.productId).map((item: any) => (
-          <View key={item._id} style={[styles.wishlistItem, { backgroundColor: theme.card, shadowColor: currentTheme === "dark" ? "#000" : "#ccc" }]}>
+          <View key={item._id} style={styles.wishlistItem}>
             <Image source={{ uri: item.productId.images?.[0] || "" }} style={styles.itemImage} />
             <View style={styles.itemInfo}>
-              <Text style={[styles.brandName, { color: theme.secondaryText }]}>{item.productId.brand}</Text>
-              <Text style={[styles.itemName, { color: theme.text }]}>{item.productId.name}</Text>
+              <Text style={styles.brandName}>{item.productId.brand}</Text>
+              <Text style={styles.itemName}>{item.productId.name}</Text>
               <View style={styles.priceContainer}>
-                <Text style={[styles.price, { color: theme.text }]}>{item.productId.price}</Text>
-                <Text style={[styles.discount, { color: theme.primary }]}>{item.productId.discount}</Text>
+                <Text style={styles.price}>{item.productId.price}</Text>
+                <Text style={styles.discount}>{item.productId.discount}</Text>
               </View>
             </View>
             <TouchableOpacity style={styles.removeButton} onPress={() => handledelete(item._id)}>
@@ -110,105 +113,105 @@ export default function Wishlist() {
   );
 }
 
-const styles = StyleSheet.create({
-  loaderContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  header: {
-    padding: 15,
-    paddingTop: 50,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#3e3e3e",
-  },
-  content: {
-    flex: 1,
-    padding: 15,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    color: "#3e3e3e",
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  loginButton: {
-    backgroundColor: "#ff3f6c",
-    paddingHorizontal: 40,
-    paddingVertical: 15,
-    borderRadius: 10,
-  },
-  loginButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  wishlistItem: {
-    flexDirection: "row",
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
+const getStyles = (theme: ThemeColors) =>
+  StyleSheet.create({
+    loaderContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: theme.background,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-    overflow: "hidden",
-  },
-  itemImage: {
-    width: 100,
-    height: 120,
-  },
-  itemInfo: {
-    flex: 1,
-    padding: 15,
-  },
-  brandName: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 5,
-  },
-  itemName: {
-    fontSize: 16,
-    color: "#3e3e3e",
-    marginBottom: 10,
-  },
-  priceContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  price: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#3e3e3e",
-    marginRight: 10,
-  },
-  discount: {
-    fontSize: 14,
-    color: "#ff3f6c",
-  },
-  removeButton: {
-    padding: 15,
-    justifyContent: "center",
-  },
-});
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
+    },
+    header: {
+      padding: 15,
+      paddingTop: 50,
+      backgroundColor: theme.card,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.border,
+    },
+    headerTitle: {
+      fontSize: 24,
+      fontWeight: "bold",
+      color: theme.text,
+    },
+    content: {
+      flex: 1,
+      padding: 15,
+    },
+    emptyState: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 20,
+    },
+    emptyTitle: {
+      fontSize: 18,
+      color: theme.text,
+      marginTop: 20,
+      marginBottom: 20,
+    },
+    loginButton: {
+      backgroundColor: theme.primary,
+      paddingHorizontal: 40,
+      paddingVertical: 15,
+      borderRadius: 10,
+    },
+    loginButtonText: {
+      color: theme.textOnPrimary,
+      fontSize: 16,
+      fontWeight: "bold",
+    },
+    wishlistItem: {
+      flexDirection: "row",
+      backgroundColor: theme.card,
+      borderRadius: 10,
+      marginBottom: 15,
+      borderWidth: 1,
+      borderColor: theme.border,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 3.84,
+      elevation: 3,
+      overflow: "hidden",
+    },
+    itemImage: {
+      width: 100,
+      height: 120,
+    },
+    itemInfo: {
+      flex: 1,
+      padding: 15,
+    },
+    brandName: {
+      fontSize: 14,
+      color: theme.secondaryText,
+      marginBottom: 5,
+    },
+    itemName: {
+      fontSize: 16,
+      color: theme.text,
+      marginBottom: 10,
+    },
+    priceContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    price: {
+      fontSize: 16,
+      fontWeight: "bold",
+      color: theme.text,
+      marginRight: 10,
+    },
+    discount: {
+      fontSize: 14,
+      color: theme.primary,
+    },
+    removeButton: {
+      padding: 15,
+      justifyContent: "center",
+    },
+  });
