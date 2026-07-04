@@ -65,9 +65,9 @@ router.post("/create/:userId", async (req, res) => {
       return res.status(400).json({ message: "No items in the active cart" });
     }
 
-    // 2. Validate stock, price, and availability
+    // 2. Validate stock and availability (warnings = price changes are non-fatal)
     const validation = await CheckoutValidationService.validateCart(cart.activeItems);
-    if (!validation.valid || validation.warnings.length > 0) {
+    if (!validation.valid) {
       await session.abortTransaction();
       session.endSession();
       return res.status(400).json({

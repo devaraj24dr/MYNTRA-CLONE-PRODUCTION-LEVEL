@@ -4,6 +4,7 @@ const User = require("../models/User");
 const Notification = require("../models/Notification");
 const NotificationJob = require("../models/NotificationJob");
 const QueueService = require("../services/QueueService");
+const PushReceiptService = require("../services/PushReceiptService");
 
 const router = express.Router();
 
@@ -188,7 +189,8 @@ router.put("/preferences", async (req, res) => {
 router.get("/analytics", async (req, res) => {
   try {
     const totalDevicesCount = await DeviceToken.countDocuments({ isActive: true });
-    
+    const inactiveDevicesCount = await DeviceToken.countDocuments({ isActive: false });
+
     // Aggregation for notification statuses
     const notificationStats = await Notification.aggregate([
       {
@@ -214,6 +216,26 @@ router.get("/analytics", async (req, res) => {
       attempts: { $gt: 1 },
     });
 
+    // Count failed jobs permanently (exhausted all attempts)
+    const permanentlyFailedJobsCount = await NotificationJob.countDocuments({
+      status: "failed",
+    });
+
+    // Count skipped notifications (rate-limited or preference-skipped)
+    const skippedCount = await Notification.countDocuments({
+      skippedAt: { $ne: null },
+    });
+
+    // Count opened notifications
+    const openedCount = await Notification.countDocuments({
+      openedAt: { $ne: null },
+    });
+
+    // Count clicked notifications
+    const clickedCount = await Notification.countDocuments({
+      clickedAt: { $ne: null },
+    });
+
     const statusCounts = { pending: 0, sent: 0, failed: 0, delivered: 0 };
     notificationStats.forEach((stat) => {
       if (statusCounts[stat._id] !== undefined) {
@@ -226,17 +248,28 @@ router.get("/analytics", async (req, res) => {
       eventCounts[stat._id] = stat.count;
     });
 
+    const total = Object.values(statusCounts).reduce((a, b) => a + b, 0);
+
     res.status(200).json({
       success: true,
       analytics: {
         devicesRegistered: totalDevicesCount,
+        devicesDeactivated: inactiveDevicesCount,
         notifications: {
-          total: Object.values(statusCounts).reduce((a, b) => a + b, 0),
+          total,
           ...statusCounts,
+          skipped: skippedCount,
+          opened: openedCount,
+          clicked: clickedCount,
+          // Engagement rates (guard against division by zero)
+          openRate: total > 0 ? ((openedCount / total) * 100).toFixed(1) + "%" : "0%",
+          clickRate: total > 0 ? ((clickedCount / total) * 100).toFixed(1) + "%" : "0%",
         },
         jobs: {
           retriedCount: retriedJobsCount,
+          permanentlyFailed: permanentlyFailedJobsCount,
         },
+        receipts: PushReceiptService.getStats(),
         eventTypeBreakdown: eventCounts,
       },
     });
@@ -256,6 +289,123 @@ router.get("/process-jobs", async (req, res) => {
     res.status(200).json({ success: true, message: "Queue processing completed." });
   } catch (error) {
     console.error("[NotificationRoutes] Error in /process-jobs:", error);
+    res.status(500).json({ error: "Internal Server Error", message: error.message });
+  }
+});
+
+/**
+ * GET /notifications/queue-stats
+ * Returns real-time statistics about the notification job queue.
+ * Useful for monitoring dashboards and operations teams.
+ */
+router.get("/queue-stats", async (req, res) => {
+  try {
+    const [pending, processing, completed, failed, stuck] = await Promise.all([
+      NotificationJob.countDocuments({ status: "pending" }),
+      NotificationJob.countDocuments({ status: "processing" }),
+      NotificationJob.countDocuments({ status: "completed" }),
+      NotificationJob.countDocuments({ status: "failed" }),
+      // "Stuck" = processing state locked for > 2 minutes (worker crash recovery indicator)
+      NotificationJob.countDocuments({
+        status: "processing",
+        lockedAt: { $lt: new Date(Date.now() - 120000) },
+      }),
+    ]);
+
+    const receiptsStats = PushReceiptService.getStats();
+
+    res.status(200).json({
+      success: true,
+      queue: {
+        pending,
+        processing,
+        completed,
+        failed,
+        stuck,
+        total: pending + processing + completed + failed,
+      },
+      receipts: receiptsStats,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("[NotificationRoutes] Error fetching queue stats:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+/**
+ * POST /notifications/track-open
+ * Tracks when a user opens/views a notification.
+ * Called from the frontend notification response handler.
+ */
+router.post("/track-open", async (req, res) => {
+  const { notificationId } = req.body;
+
+  if (!notificationId) {
+    return res.status(400).json({ error: "notificationId is required" });
+  }
+
+  try {
+    const updated = await Notification.findByIdAndUpdate(
+      notificationId,
+      { openedAt: new Date() },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: "Notification not found" });
+    }
+
+    console.log(`[NotificationRoutes] 👁️ Notification opened: ${notificationId}`);
+    res.status(200).json({ success: true, openedAt: updated.openedAt });
+  } catch (error) {
+    console.error("[NotificationRoutes] Error tracking open:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+/**
+ * POST /notifications/track-click
+ * Tracks when a user clicks/taps a notification to navigate.
+ * Called from the deep-link handler in useNotifications hook.
+ */
+router.post("/track-click", async (req, res) => {
+  const { notificationId } = req.body;
+
+  if (!notificationId) {
+    return res.status(400).json({ error: "notificationId is required" });
+  }
+
+  try {
+    const updated = await Notification.findByIdAndUpdate(
+      notificationId,
+      { clickedAt: new Date() },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: "Notification not found" });
+    }
+
+    console.log(`[NotificationRoutes] 👆 Notification clicked: ${notificationId}`);
+    res.status(200).json({ success: true, clickedAt: updated.clickedAt });
+  } catch (error) {
+    console.error("[NotificationRoutes] Error tracking click:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+/**
+ * GET /notifications/process-receipts
+ * Triggers async Expo push receipt polling.
+ * Should be called ~15 minutes after batch sends (via cron or Vercel cron).
+ */
+router.get("/process-receipts", async (req, res) => {
+  try {
+    const result = await PushReceiptService.pollReceipts();
+    res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    console.error("[NotificationRoutes] Error processing receipts:", error);
     res.status(500).json({ error: "Internal Server Error", message: error.message });
   }
 });

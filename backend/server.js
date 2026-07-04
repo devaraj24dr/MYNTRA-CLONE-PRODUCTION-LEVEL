@@ -59,7 +59,8 @@ app.use("/category", categoryrouter);
 app.use("/product", productrouter);
 app.use("/bag", Bagroutes);
 app.use("/wishlist", Wishlistroutes);
-app.use("/Order", OrderRoutes);
+app.use("/Order", OrderRoutes); // checkout uses POST /Order/create/:id
+app.use("/order", OrderRoutes); // orders page uses GET /order/user/:id
 app.use("/recently-viewed", recentlyViewedRouter);
 app.use("/notifications", NotificationRouter);
 app.use("/transactions", TransactionRouter);

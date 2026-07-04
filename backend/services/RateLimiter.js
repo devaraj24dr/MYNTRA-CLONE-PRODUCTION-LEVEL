@@ -46,6 +46,39 @@ class RateLimiter {
 
     return recentSentCount >= RATE_LIMIT_MAX_PROMOTIONS;
   }
+
+  /**
+   * Returns the number of promotional notifications skipped for a user in the
+   * last RATE_LIMIT_WINDOW_MS window due to rate limiting.
+   * @param {string} userId
+   * @returns {Promise<number>}
+   */
+  static async getSkippedCount(userId) {
+    if (!userId) return 0;
+    const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MS);
+    return Notification.countDocuments({
+      userId,
+      skippedAt: { $gte: windowStart },
+    });
+  }
+
+  /**
+   * Records that a notification was skipped due to rate limiting.
+   * Stamps skippedAt on the notification document.
+   * @param {string} notificationId
+   * @returns {Promise<void>}
+   */
+  static async recordSkipped(notificationId) {
+    if (!notificationId) return;
+    try {
+      await Notification.findByIdAndUpdate(notificationId, {
+        skippedAt: new Date(),
+      });
+    } catch (err) {
+      console.error("[RateLimiter] Error recording skipped notification:", err.message);
+    }
+  }
+
 }
 
 module.exports = RateLimiter;

@@ -393,49 +393,63 @@ export default function Bag() {
   const renderSavedItem = (item: CartItem) => {
     const isUpdating = updatingItemId === item._id;
     const currentPrice = item.productId?.price ?? item.priceAtAdd;
+    const productId = item.productId?._id;
 
     return (
       <View key={item._id} style={styles.cartItem}>
-        <Image
-          source={{ uri: item.productId?.images?.[0] }}
-          style={styles.itemImage}
-        />
-        <View style={styles.itemContent}>
-          <Text style={styles.brandName}>
-            {item.productId?.brand}
-          </Text>
-          <Text style={styles.itemName} numberOfLines={2}>
-            {item.productId?.name}
-          </Text>
-          <Text style={styles.itemSize}>
-            Size: {item.size} · Qty: {item.quantity}
-          </Text>
-          <Text style={styles.itemPrice}>₹{currentPrice}</Text>
-
-          <View style={styles.actionsRow}>
-            <TouchableOpacity
-              style={styles.moveBtn}
-              onPress={() => handleMoveToCart(item)}
-              disabled={isUpdating}
-            >
-              {isUpdating ? (
-                <ActivityIndicator size="small" color={theme.textOnPrimary} />
-              ) : (
-                <>
-                  <ShoppingCart size={14} color={theme.textOnPrimary} />
-                  <Text style={styles.moveBtnText}>Move to Cart</Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.iconBtn}
-              onPress={() => handleRemoveSaved(item)}
-              disabled={isUpdating}
-            >
-              <Trash2 size={18} color={theme.error} />
-            </TouchableOpacity>
+        {/* Tappable area: image + info → navigate to product */}
+        <TouchableOpacity
+          style={styles.savedItemTapArea}
+          onPress={() => productId && router.push({ pathname: "/product/[id]", params: { id: productId } })}
+          disabled={isUpdating}
+        >
+          {item.productId?.images?.[0] ? (
+            <Image
+              source={{ uri: item.productId.images[0] }}
+              style={styles.itemImage}
+            />
+          ) : (
+            <View style={[styles.itemImage, styles.imageFallback]}>
+              <Text style={styles.imageFallbackText}>No Image</Text>
+            </View>
+          )}
+          <View style={[styles.itemContent, { paddingRight: 0 }]}>
+            <Text style={styles.brandName}>
+              {item.productId?.brand ?? "Unknown Brand"}
+            </Text>
+            <Text style={styles.itemName} numberOfLines={2}>
+              {item.productId?.name ?? "Deleted Product"}
+            </Text>
+            <Text style={styles.itemSize}>
+              Size: {item.size} · Qty: {item.quantity}
+            </Text>
+            <Text style={styles.itemPrice}>₹{currentPrice}</Text>
           </View>
+        </TouchableOpacity>
+
+        {/* Action buttons — independent of navigation tap */}
+        <View style={styles.savedActions}>
+          <TouchableOpacity
+            style={styles.moveBtn}
+            onPress={() => handleMoveToCart(item)}
+            disabled={isUpdating}
+          >
+            {isUpdating ? (
+              <ActivityIndicator size="small" color={theme.textOnPrimary} />
+            ) : (
+              <>
+                <ShoppingCart size={14} color={theme.textOnPrimary} />
+                <Text style={styles.moveBtnText}>Move to Cart</Text>
+              </>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() => handleRemoveSaved(item)}
+            disabled={isUpdating}
+          >
+            <Trash2 size={18} color={theme.error} />
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -666,6 +680,26 @@ const getStyles = (theme: ThemeColors) =>
     itemImage: {
       width: 110,
       height: 130,
+      resizeMode: "cover",
+    },
+    imageFallback: {
+      backgroundColor: theme.surface,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    imageFallbackText: {
+      fontSize: 10,
+      color: theme.secondaryText,
+    },
+    savedItemTapArea: {
+      flexDirection: "row",
+      flex: 1,
+    },
+    savedActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingRight: 8,
+      gap: 6,
     },
     itemContent: {
       flex: 1,

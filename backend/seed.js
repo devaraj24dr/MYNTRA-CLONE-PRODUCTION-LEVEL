@@ -172,6 +172,78 @@ const products = [
     ],
     category: "Kids",
   },
+  {
+    name: "Men Slim Fit Checked Shirt",
+    brand: "Roadster",
+    price: 899,
+    discount: "50% OFF",
+    description: "Stylish red and black checked casual shirt for men. Regular fit, 100% cotton.",
+    sizes: ["M", "L", "XL"],
+    images: [
+      "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500&auto=format&fit=crop",
+    ],
+    category: "Men",
+  },
+  {
+    name: "Women Oversized Hoodie",
+    brand: "H&M",
+    price: 1999,
+    discount: "30% OFF",
+    description: "Cozy oversized hoodie in soft sweatshirt fabric. Drop shoulders and kangaroo pocket.",
+    sizes: ["XS", "S", "M", "L"],
+    images: [
+      "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=500&auto=format&fit=crop",
+    ],
+    category: "Women",
+  },
+  {
+    name: "Classic White Sneakers",
+    brand: "Puma",
+    price: 2999,
+    discount: "20% OFF",
+    description: "Minimalist leather white sneakers with comfortable cushioning.",
+    sizes: ["UK7", "UK8", "UK9", "UK10"],
+    images: [
+      "https://images.unsplash.com/photo-1597045566677-8cf032ed6634?w=500&auto=format&fit=crop",
+    ],
+    category: "Footwear",
+  },
+  {
+    name: "Boys Denim Dungarees",
+    brand: "USPA Kids",
+    price: 1599,
+    discount: "45% OFF",
+    description: "Durable blue denim dungarees for active boys.",
+    sizes: ["3-4Y", "5-6Y", "7-8Y"],
+    images: [
+      "https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=500&auto=format&fit=crop",
+    ],
+    category: "Kids",
+  },
+  {
+    name: "Women Printed A-Line Kurta",
+    brand: "BIBA",
+    price: 1799,
+    discount: "40% OFF",
+    description: "Elegant printed A-line kurta in comfortable cotton, perfect for ethnic wear.",
+    sizes: ["S", "M", "L", "XL"],
+    images: [
+      "https://images.unsplash.com/photo-1610030469668-93535c17b6b3?w=500&auto=format&fit=crop",
+    ],
+    category: "Women",
+  },
+  {
+    name: "Leather Chelsea Boots",
+    brand: "Woodland",
+    price: 4999,
+    discount: "15% OFF",
+    description: "Premium leather Chelsea boots with durable grip sole.",
+    sizes: ["UK8", "UK9", "UK10"],
+    images: [
+      "https://images.unsplash.com/photo-1638247025967-b4e38f787b76?w=500&auto=format&fit=crop",
+    ],
+    category: "Footwear",
+  },
 ];
 
 async function seed() {

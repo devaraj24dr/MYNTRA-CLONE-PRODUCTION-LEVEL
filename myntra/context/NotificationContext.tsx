@@ -3,6 +3,7 @@ import axios from "axios";
 import API_URL from "@/constants/Api";
 import { useAuth } from "./AuthContext";
 import { Platform } from "react-native";
+import * as Device from "expo-device";
 
 let Notifications: any = null;
 if (Platform.OS !== "web" && typeof window !== "undefined") {
@@ -26,6 +27,8 @@ interface NotificationContextType {
   updatePreferences: (newPreferences: Partial<UserNotificationPreferences>) => Promise<void>;
   fetchPreferences: () => Promise<void>;
   registerDeviceToken: (token: string) => Promise<void>;
+  trackOpen: (notificationId: string) => Promise<void>;
+  trackClick: (notificationId: string) => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -33,7 +36,8 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 export const NotificationProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
-  const [lastNotification, setLastNotification] = useState<Notifications.Notification | null>(null);
+  // Use `any` to avoid importing expo-notifications types which are unavailable on web
+  const [lastNotification, setLastNotification] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [preferences, setPreferences] = useState<UserNotificationPreferences>({
     orderUpdates: true,
@@ -91,14 +95,42 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
   const registerDeviceToken = async (token: string) => {
     try {
+      // Determine the actual platform for accurate device type
+      const deviceType = Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "web";
       await axios.post(`${API_URL}/notifications/register`, {
         token,
-        deviceType: "android", // Fallback, will be detailed by expo-device
+        deviceType,
         userId: user?._id || null,
       });
       console.log("Registered Expo push token to MongoDB successfully:", token);
     } catch (error) {
       console.error("Failed to register Expo push token to backend:", error);
+    }
+  };
+
+  /**
+   * Tracks when a user opens a notification (foreground receipt).
+   * @param notificationId - MongoDB Notification._id
+   */
+  const trackOpen = async (notificationId: string) => {
+    if (!notificationId) return;
+    try {
+      await axios.post(`${API_URL}/notifications/track-open`, { notificationId });
+    } catch (err) {
+      console.warn("[NotificationContext] Failed to track open:", err);
+    }
+  };
+
+  /**
+   * Tracks when a user clicks/taps a notification to navigate.
+   * @param notificationId - MongoDB Notification._id
+   */
+  const trackClick = async (notificationId: string) => {
+    if (!notificationId) return;
+    try {
+      await axios.post(`${API_URL}/notifications/track-click`, { notificationId });
+    } catch (err) {
+      console.warn("[NotificationContext] Failed to track click:", err);
     }
   };
 
@@ -114,6 +146,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         updatePreferences,
         fetchPreferences,
         registerDeviceToken,
+        trackOpen,
+        trackClick,
       }}
     >
       {children}

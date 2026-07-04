@@ -89,8 +89,8 @@ export default function Orders() {
               onPress={() => toggleOrderDetails(order._id)}
             >
               <View>
-                <Text style={styles.orderId}>Order #{order._id}</Text>
-                <Text style={styles.orderDate}>{order.date}</Text>
+                <Text style={styles.orderId}>Order #{String(order._id).slice(-8).toUpperCase()}</Text>
+                <Text style={styles.orderDate}>{new Date(order.date).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })}</Text>
               </View>
               <View style={styles.statusContainer}>
                 <Package size={16} color={theme.success} />
@@ -99,19 +99,29 @@ export default function Orders() {
             </TouchableOpacity>
 
             <View style={styles.itemsContainer}>
-              {order.items.map((item: any) => (
-                <View key={item._id} style={styles.orderItem}>
-                  <Image
-                    source={{ uri: item.productId.images }}
-                    style={styles.itemImage}
-                  />
-                  <View style={styles.itemInfo}>
-                    <Text style={styles.brandName}>{item.productId.brand}</Text>
-                    <Text style={styles.itemName}>{item.productId.name}</Text>
-                    <Text style={styles.itemPrice}>₹{item.productId.price}</Text>
+              {order.items.map((item: any) => {
+                const prod = item.productId; // may be null if product was deleted
+                return (
+                  <View key={item._id} style={styles.orderItem}>
+                    {prod?.images?.[0] ? (
+                      <Image
+                        source={{ uri: prod.images[0] }}
+                        style={styles.itemImage}
+                      />
+                    ) : (
+                      <View style={[styles.itemImage, styles.imagePlaceholder]}>
+                        <Text style={styles.placeholderText}>No Image</Text>
+                      </View>
+                    )}
+                    <View style={styles.itemInfo}>
+                      <Text style={styles.brandName}>{prod?.brand ?? 'Unknown Brand'}</Text>
+                      <Text style={styles.itemName}>{prod?.name ?? 'Deleted Product'}</Text>
+                      <Text style={styles.itemSize}>Size: {item.size}  ×{item.quantity}</Text>
+                      <Text style={styles.itemPrice}>₹{item.price ?? prod?.price ?? 0}</Text>
+                    </View>
                   </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
 
             {expandedOrder === order._id && (
@@ -284,26 +294,43 @@ const getStyles = (theme: ThemeColors) =>
     itemImage: {
       width: 80,
       height: 100,
-      borderRadius: 5,
+      borderRadius: 8,
+      resizeMode: "cover",
+    },
+    imagePlaceholder: {
+      backgroundColor: theme.surface,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    placeholderText: {
+      fontSize: 10,
+      color: theme.secondaryText,
     },
     itemInfo: {
       flex: 1,
       marginLeft: 15,
     },
     brandName: {
-      fontSize: 14,
+      fontSize: 13,
       color: theme.secondaryText,
       marginBottom: 2,
+      fontWeight: "600",
     },
     itemName: {
-      fontSize: 16,
+      fontSize: 15,
       color: theme.text,
-      marginBottom: 2,
+      marginBottom: 4,
+      fontWeight: "500",
+    },
+    itemSize: {
+      fontSize: 12,
+      color: theme.secondaryText,
+      marginBottom: 4,
     },
     itemPrice: {
       fontSize: 16,
       fontWeight: "bold",
-      color: theme.text,
+      color: theme.primary,
     },
     orderDetails: {
       padding: 15,

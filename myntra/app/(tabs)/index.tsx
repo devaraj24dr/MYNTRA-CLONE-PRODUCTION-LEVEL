@@ -7,10 +7,14 @@ import {
   StyleSheet,
   ActivityIndicator,
   FlatList,
+  Animated,
+  Dimensions,
+  Platform,
+  ImageBackground,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Search, ChevronRight } from "lucide-react-native";
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import API_URL from "@/constants/Api";
@@ -99,7 +103,271 @@ const deals = [
   },
 ];
 
+const BANNERS = [
+  {
+    id: 1,
+    badge: "EOSS | UP TO 70% OFF",
+    headline: "Fashion Favourites",
+    subline: "Trending Styles & Premium Brands",
+    tag: "Free Shipping on First Order",
+    image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1000&auto=format&fit=crop",
+  },
+  {
+    id: 2,
+    badge: "SUMMER COUTURE 2025",
+    headline: "Hottest Arrivals",
+    subline: "Breezy Linens & Pastels",
+    tag: "Easy 14-day Returns",
+    image: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=1000&auto=format&fit=crop",
+  },
+  {
+    id: 3,
+    badge: "SNEAKERHEAD HEADQUARTERS",
+    headline: "Step In Style",
+    subline: "Nike, Adidas, Puma & Woodland",
+    tag: "Flat ₹500 Cashback on UPI",
+    image: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=1000&auto=format&fit=crop",
+  },
+  {
+    id: 4,
+    badge: "FESTIVE GLAMOUR",
+    headline: "Ethnic Elegance",
+    subline: "BIBA, W, Aurelia & More",
+    tag: "Get Extra 10% Off | Code: ETHNIC10",
+    image: "https://images.unsplash.com/photo-1610030469668-93535c17b6b3?w=1000&auto=format&fit=crop",
+  },
+  {
+    id: 5,
+    badge: "PLAYTIME FAVOURITES",
+    headline: "Tiny Trendsetters",
+    subline: "Comfy Cottons & Cute Sets",
+    tag: "Buy 2 Get 1 Free | USPA & Mothercare",
+    image: "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=1000&auto=format&fit=crop",
+  },
+  {
+    id: 6,
+    badge: "WORKOUT BASICS",
+    headline: "Chase Your Goals",
+    subline: "High-Performance Activewear",
+    tag: "Up to 50% Off | Adidas & HRX",
+    image: "https://images.unsplash.com/photo-1518310383802-640c2de311b2?w=1000&auto=format&fit=crop",
+  },
+];
 
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+
+function BannerCarousel() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollX = useRef(new Animated.Value(0)).current;
+  const flatRef = useRef<any>(null);
+  const timerRef = useRef<any>(null);
+
+  const startAutoPlay = useCallback(() => {
+    timerRef.current = setInterval(() => {
+      setActiveIndex((prev) => {
+        const next = (prev + 1) % BANNERS.length;
+        flatRef.current?.scrollToIndex({ index: next, animated: true });
+        return next;
+      });
+    }, 4000);
+  }, []);
+
+  useEffect(() => {
+    startAutoPlay();
+    return () => clearInterval(timerRef.current);
+  }, [startAutoPlay]);
+
+  const goTo = (idx: number) => {
+    clearInterval(timerRef.current);
+    setActiveIndex(idx);
+    flatRef.current?.scrollToIndex({ index: idx, animated: true });
+    startAutoPlay();
+  };
+
+  const onScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+    { useNativeDriver: false }
+  );
+
+  const onMomentumScrollEnd = (e: any) => {
+    const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+    clearInterval(timerRef.current);
+    setActiveIndex(idx);
+    startAutoPlay();
+  };
+
+  return (
+    <View style={carouselStyles.wrapper}>
+      <Animated.FlatList
+        ref={flatRef}
+        data={BANNERS}
+        keyExtractor={(b) => String(b.id)}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onScroll={onScroll}
+        onMomentumScrollEnd={onMomentumScrollEnd}
+        scrollEventThrottle={16}
+        renderItem={({ item: b }) => (
+          <ImageBackground
+            source={{ uri: b.image }}
+            style={[carouselStyles.slide, { width: SCREEN_WIDTH }]}
+            imageStyle={carouselStyles.slideImageBg}
+          >
+            <View style={carouselStyles.overlay} />
+            <View style={carouselStyles.textBlock}>
+              <View style={carouselStyles.badgePill}>
+                <Text style={carouselStyles.badgeText}>{b.badge}</Text>
+              </View>
+              <Text style={carouselStyles.headline}>{b.headline}</Text>
+              <Text style={carouselStyles.subline}>{b.subline}</Text>
+              <View style={carouselStyles.divider} />
+              <Text style={carouselStyles.tagText}>{b.tag}</Text>
+            </View>
+          </ImageBackground>
+        )}
+      />
+
+      {/* Left arrow */}
+      {activeIndex > 0 && (
+        <TouchableOpacity style={[carouselStyles.arrow, carouselStyles.arrowLeft]} onPress={() => goTo(activeIndex - 1)}>
+          <Text style={carouselStyles.arrowText}>‹</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Right arrow */}
+      {activeIndex < BANNERS.length - 1 && (
+        <TouchableOpacity style={[carouselStyles.arrow, carouselStyles.arrowRight]} onPress={() => goTo(activeIndex + 1)}>
+          <Text style={carouselStyles.arrowText}>›</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Dot indicators */}
+      <View style={carouselStyles.dots}>
+        {BANNERS.map((_, i) => (
+          <TouchableOpacity key={i} onPress={() => goTo(i)}>
+            <View
+              style={[
+                carouselStyles.dot,
+                i === activeIndex ? carouselStyles.dotActive : carouselStyles.dotInactive,
+              ]}
+            />
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const carouselStyles = StyleSheet.create({
+  wrapper: {
+    width: "100%",
+    height: 200,
+    position: "relative",
+    overflow: "hidden",
+  },
+  slide: {
+    height: 200,
+    justifyContent: "center",
+    paddingHorizontal: 30,
+    position: "relative",
+  },
+  slideImageBg: {
+    resizeMode: "cover",
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+  },
+  textBlock: {
+    zIndex: 2,
+    maxWidth: "80%",
+  },
+  badgePill: {
+    alignSelf: "flex-start",
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    marginBottom: 6,
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.4)",
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+  },
+  headline: {
+    color: "#fff",
+    fontSize: 26,
+    fontWeight: "900",
+    marginBottom: 2,
+    textShadowColor: "rgba(0, 0, 0, 0.4)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  subline: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#e0e0e0",
+    marginBottom: 6,
+  },
+  divider: {
+    width: 40,
+    height: 2,
+    backgroundColor: "#ff3f6c",
+    marginBottom: 6,
+  },
+  tagText: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  arrow: {
+    position: "absolute",
+    top: "50%",
+    marginTop: -20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10,
+  },
+  arrowLeft: { left: 8 },
+  arrowRight: { right: 8 },
+  arrowText: {
+    color: "#fff",
+    fontSize: 26,
+    fontWeight: "300",
+    lineHeight: 30,
+  },
+  dots: {
+    position: "absolute",
+    bottom: 8,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 6,
+  },
+  dot: {
+    borderRadius: 4,
+    height: 6,
+  },
+  dotActive: {
+    width: 20,
+    backgroundColor: "#fff",
+  },
+  dotInactive: {
+    width: 6,
+    backgroundColor: "rgba(255,255,255,0.45)",
+  },
+});
 
 export default function Home() {
   const router = useRouter();
@@ -215,12 +483,8 @@ export default function Home() {
         </TouchableOpacity>
       </View>
 
-      <Image
-        source={{
-          uri: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=800&auto=format&fit=crop",
-        }}
-        style={styles.banner}
-      />
+      {/* ── Promotional Banner Carousel ── */}
+      <BannerCarousel />
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -379,41 +643,43 @@ export default function Home() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>TRENDING NOW</Text>
+          <TouchableOpacity style={styles.viewAll} onPress={() => router.push("/categories")}>
+            <Text style={styles.viewAllText}>View All</Text>
+            <ChevronRight size={20} color={theme.primary} />
+          </TouchableOpacity>
         </View>
-        <View style={styles.productsGrid}>
-          {isLoading ? (
-            <ActivityIndicator
-              size="large"
-              color={theme.primary}
-              style={styles.loader}
-            />
-          ) : !product || product.length === 0 ? (
-            <Text style={styles.emptyText}>No Product available</Text>
-          ) : ( 
-            <View style={styles.productsGrid}>
-              {product.map((product: any, idx: number) => (
-                <TouchableOpacity
-                  key={`${product._id}-${idx}`}
-                  style={styles.productCard}
-                  onPress={() => handleProductPress(product._id)}
-                >
-                  <Image
-                    source={{ uri: product.images[0] }}
-                    style={styles.productImage}
-                  />
-                  <View style={styles.productInfo}>
-                    <Text style={styles.brandName}>{product.brand}</Text>
-                    <Text style={styles.productName}>{product.name}</Text>
-                    <View style={styles.priceRow}>
-                      <Text style={styles.productPrice}>{product.price}</Text>
-                      <Text style={styles.discount}>{product.discount}</Text>
-                    </View>
+        {isLoading ? (
+          <ActivityIndicator size="large" color={theme.primary} style={styles.loader} />
+        ) : !product || product.length === 0 ? (
+          <Text style={styles.emptyText}>No Product available</Text>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.productsScroll}
+          >
+            {product.map((prod: any, idx: number) => (
+              <TouchableOpacity
+                key={`${prod._id}-${idx}`}
+                style={styles.productCard}
+                onPress={() => handleProductPress(prod._id)}
+              >
+                <Image
+                  source={{ uri: prod.images?.[0] }}
+                  style={styles.productImage}
+                />
+                <View style={styles.productInfo}>
+                  <Text style={styles.brandName} numberOfLines={1}>{prod.brand}</Text>
+                  <Text style={styles.productName} numberOfLines={1}>{prod.name}</Text>
+                  <View style={styles.priceRow}>
+                    <Text style={styles.productPrice}>{prod.price}</Text>
+                    {prod.discount ? <Text style={styles.discount}>{prod.discount}</Text> : null}
                   </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
       </View>
     </ScrollView>
   );
@@ -449,11 +715,7 @@ const getStyles = (theme: ThemeColors) =>
     searchButton: {
       padding: 8,
     },
-    banner: {
-      width: "100%",
-      height: 200,
-      resizeMode: "cover",
-    },
+    // banner style replaced by BannerCarousel component
     section: {
       padding: 15,
     },
@@ -521,58 +783,58 @@ const getStyles = (theme: ThemeColors) =>
       fontSize: 18,
       fontWeight: "bold",
     },
-    productsGrid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      marginHorizontal: -8,
+    productsScroll: {
+      paddingHorizontal: 4,
+      gap: 10,
     },
     productCard: {
-      width: "48%",
-      marginHorizontal: "1%",
-      marginBottom: 15,
+      width: 140,
       backgroundColor: theme.card,
       borderRadius: 10,
       borderWidth: 1,
       borderColor: theme.border,
       shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
+      shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.05,
-      shadowRadius: 3.84,
-      elevation: 3,
+      shadowRadius: 2,
+      elevation: 2,
+      overflow: "hidden",
     },
     productImage: {
-      width: "100%",
-      height: 200,
-      borderTopLeftRadius: 10,
-      borderTopRightRadius: 10,
+      width: 140,
+      height: 175,
+      resizeMode: "cover",
     },
     productInfo: {
-      padding: 10,
+      padding: 7,
     },
     brandName: {
-      fontSize: 14,
+      fontSize: 10,
       color: theme.secondaryText,
-      marginBottom: 2,
+      marginBottom: 1,
+      textTransform: "uppercase",
+      fontWeight: "600",
     },
     productName: {
-      fontSize: 16,
+      fontSize: 12,
       color: theme.text,
-      marginBottom: 5,
+      marginBottom: 3,
+      fontWeight: "500",
     },
     priceRow: {
       flexDirection: "row",
       alignItems: "center",
+      gap: 4,
     },
     productPrice: {
-      fontSize: 16,
+      fontSize: 12,
       fontWeight: "bold",
       color: theme.text,
-      marginRight: 8,
     },
     discount: {
-      fontSize: 14,
+      fontSize: 10,
       color: theme.primary,
-      fontWeight: "500",
+      fontWeight: "600",
     },
     loader: {
       marginTop: 50,

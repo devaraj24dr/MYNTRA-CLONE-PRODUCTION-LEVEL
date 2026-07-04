@@ -31,19 +31,39 @@ async function validateCart(items) {
     return { valid: false, errors: [{ type: "EMPTY_CART", detail: "Cart is empty" }], warnings: [] };
   }
 
-  // Fetch all products fresh from DB in one query
-  const productIds = items.map((i) => i.productId._id || i.productId);
-  const products = await Product.find({ _id: { $in: productIds } }).lean();
-  const productMap = Object.fromEntries(products.map((p) => [p._id.toString(), p]));
-
   const errors = [];
   const warnings = [];
 
+  // Pre-filter: handle items whose productId failed to populate (deleted products)
+  const validItems = [];
   for (const item of items) {
+    if (!item.productId) {
+      errors.push({
+        type: "DISCONTINUED",
+        itemId: item._id,
+        productId: null,
+        productName: "Unknown Product",
+        detail: "A product in your cart no longer exists and cannot be purchased.",
+      });
+    } else {
+      validItems.push(item);
+    }
+  }
+
+  if (validItems.length === 0) {
+    return { valid: false, errors, warnings, totalItems: items.length, validatedAt: new Date().toISOString() };
+  }
+
+  // Fetch all valid products fresh from DB in one query
+  const productIds = validItems.map((i) => i.productId._id || i.productId);
+  const products = await Product.find({ _id: { $in: productIds } }).lean();
+  const productMap = Object.fromEntries(products.map((p) => [p._id.toString(), p]));
+
+  for (const item of validItems) {
     const pid = (item.productId._id || item.productId).toString();
     const product = productMap[pid];
 
-    // 1. Product no longer exists
+    // 1. Product no longer exists in DB
     if (!product) {
       errors.push({
         type: "DISCONTINUED",

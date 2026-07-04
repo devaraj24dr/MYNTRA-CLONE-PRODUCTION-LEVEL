@@ -1,6 +1,9 @@
 import { useEffect, useRef } from "react";
 import { Platform } from "react-native";
 import * as Device from "expo-device";
+import { useRouter } from "expo-router";
+import axios from "axios";
+import API_URL from "@/constants/Api";
 let Notifications: any = null;
 if (Platform.OS !== "web" && typeof window !== "undefined") {
   Notifications = require("expo-notifications");
@@ -25,6 +28,8 @@ export const useNotifications = () => {
   const { setExpoPushToken, setLastNotification, registerDeviceToken } = useNotificationsContext();
   const notificationListener = useRef<any>();
   const responseListener = useRef<any>();
+  // expo-router navigation hook for deep-linking from notification taps
+  const router = useRouter();
 
   useEffect(() => {
     if (!Notifications) return;
@@ -72,12 +77,40 @@ export const useNotifications = () => {
     };
   }, [user?._id]);
 
-  // Handle route navigation when a user clicks on a notification
-  const handleNotificationTap = (data: any) => {
+  // Handle route navigation and analytics when a user taps on a notification
+  const handleNotificationTap = async (data: any) => {
     if (!data) return;
     console.log("[useNotifications] Handling deep link / tap action with data:", data);
-    // E.g., if (data.orderId) router.push(`/orders?id=${data.orderId}`)
-    // If we have product details: router.push(`/product/${data.productId}`)
+
+    // Track click analytics on the backend (non-blocking)
+    if (data.notificationId) {
+      axios
+        .post(`${API_URL}/notifications/track-click`, {
+          notificationId: data.notificationId,
+        })
+        .catch((err) =>
+          console.warn("[useNotifications] Failed to track notification click:", err.message)
+        );
+    }
+
+    // Deep-link routing based on event payload
+    try {
+      if (data.orderId) {
+        // Order lifecycle notifications → navigate to Orders screen
+        router.push("/orders");
+      } else if (data.productId) {
+        // Product events (price drop, back in stock) → navigate to product detail
+        router.push(`/product/${data.productId}`);
+      } else if (data.eventType === "Cart Abandonment") {
+        // Cart reminder → open the bag tab
+        router.push("/(tabs)/bag");
+      } else {
+        // Fallback → main tab
+        router.push("/(tabs)");
+      }
+    } catch (navError) {
+      console.warn("[useNotifications] Deep-link navigation error:", navError);
+    }
   };
 
   /**

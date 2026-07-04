@@ -94,15 +94,20 @@ export default function Wishlist() {
       <ScrollView style={styles.content}>
         {wishlist?.filter((item: any) => item.productId).map((item: any) => (
           <View key={item._id} style={styles.wishlistItem}>
-            <Image source={{ uri: item.productId.images?.[0] || "" }} style={styles.itemImage} />
-            <View style={styles.itemInfo}>
-              <Text style={styles.brandName}>{item.productId.brand}</Text>
-              <Text style={styles.itemName}>{item.productId.name}</Text>
-              <View style={styles.priceContainer}>
-                <Text style={styles.price}>{item.productId.price}</Text>
-                <Text style={styles.discount}>{item.productId.discount}</Text>
+            <TouchableOpacity
+              style={styles.itemTapArea}
+              onPress={() => router.push({ pathname: "/product/[id]", params: { id: item.productId._id } })}
+            >
+              <Image source={{ uri: item.productId.images?.[0] || "" }} style={styles.itemImage} />
+              <View style={styles.itemInfo}>
+                <Text style={styles.brandName}>{item.productId.brand}</Text>
+                <Text style={styles.itemName}>{item.productId.name}</Text>
+                <View style={styles.priceContainer}>
+                  <Text style={styles.price}>{item.productId.price}</Text>
+                  <Text style={styles.discount}>{item.productId.discount}</Text>
+                </View>
               </View>
-            </View>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.removeButton} onPress={() => handledelete(item._id)}>
               <Trash2 size={24} color={theme.primary} />
             </TouchableOpacity>
@@ -178,9 +183,14 @@ const getStyles = (theme: ThemeColors) =>
       elevation: 3,
       overflow: "hidden",
     },
+    itemTapArea: {
+      flexDirection: "row",
+      flex: 1,
+    },
     itemImage: {
       width: 100,
       height: 120,
+      resizeMode: "cover",
     },
     itemInfo: {
       flex: 1,

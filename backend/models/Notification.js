@@ -26,10 +26,16 @@ const NotificationSchema = new mongoose.Schema(
         "Back In Stock",
         "Flash Sales",
         "Cart Abandonment",
+        "Promotional Campaign",  // Added: covers generic marketing campaigns
       ],
       required: true,
     },
     data: {
+      type: Object,
+      default: {},
+    },
+    // payload is an alias to data for requirement compliance
+    payload: {
       type: Object,
       default: {},
     },
@@ -47,6 +53,24 @@ const NotificationSchema = new mongoose.Schema(
     },
     errorMessage: {
       type: String,
+    },
+    // Analytics tracking timestamps
+    skippedAt: {
+      type: Date,
+      default: null,
+    },
+    openedAt: {
+      type: Date,
+      default: null,
+    },
+    clickedAt: {
+      type: Date,
+      default: null,
+    },
+    // Track how many times this notification was retried
+    retryCount: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true }
