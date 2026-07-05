@@ -97,6 +97,17 @@ export const addRecentlyViewed = async (
 };
 
 /**
+ * Clear the local recently viewed history from AsyncStorage on logout.
+ */
+export const clearRecentlyViewed = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(RECENTLY_VIEWED_KEY);
+  } catch (error) {
+    console.error("Error clearing recently viewed:", error);
+  }
+};
+
+/**
  * Merges local and remote viewed history, removes duplicates, sorts by latest viewedAt, and persists.
  */
 export const syncRecentlyViewed = async (userId: string): Promise<RecentlyViewedItem[]> => {

@@ -33,22 +33,28 @@ class ReceiptService {
     
     // Billed To (Left column)
     doc.fontSize(10).fillColor(textColor).text("BILLED TO:", 50, detailsY, { underline: true });
-    doc.fontSize(10).text(`Name: ${user.fullName || "Valued Customer"}`, 50, detailsY + 20);
-    doc.text(`Email: ${user.email}`, 50, detailsY + 35);
+    const billedToText = [
+      `Name: ${user.fullName || "Valued Customer"}`,
+      `Email: ${user.email}`
+    ].join("\n");
+    doc.text(billedToText, 50, detailsY + 20, { width: 280 });
     
     // Invoice details (Right column)
-    doc.fontSize(10).text("INVOICE DETAILS:", 350, detailsY, { underline: true });
-    doc.text(`Invoice Number: ${transaction.invoiceId}`, 350, detailsY + 20);
-    doc.text(`Transaction ID: ${transaction.transactionId}`, 350, detailsY + 35);
-    doc.text(`Date: ${new Date(transaction.createdAt).toLocaleString()}`, 350, detailsY + 50);
-    doc.text(`Payment Method: ${transaction.paymentMethod.toUpperCase()}`, 350, detailsY + 65);
-    doc.text(`Status: ${transaction.status.toUpperCase()}`, 350, detailsY + 80);
+    doc.fontSize(10).fillColor(textColor).text("INVOICE DETAILS:", 350, detailsY, { underline: true });
+    const invoiceDetailsText = [
+      `Invoice Number:\n${transaction.invoiceId}`,
+      `Transaction ID:\n${transaction.transactionId}`,
+      `Date: ${new Date(transaction.createdAt).toLocaleString()}`,
+      `Payment Method: ${transaction.paymentMethod.toUpperCase()}`,
+      `Status: ${transaction.status.toUpperCase()}`
+    ].join("\n");
+    doc.text(invoiceDetailsText, 350, detailsY + 20, { width: 195 });
 
     // Draw Divider Line
-    doc.strokeColor(dividerColor).lineWidth(1).moveTo(50, 260).lineTo(545, 260).stroke();
+    doc.strokeColor(dividerColor).lineWidth(1).moveTo(50, 270).lineTo(545, 270).stroke();
 
     // --- Table Headers ---
-    const tableHeaderY = 280;
+    const tableHeaderY = 290;
     doc.fontSize(10).fillColor(textColor);
     doc.text("Description", 60, tableHeaderY);
     doc.text("Qty", 350, tableHeaderY, { align: "center" });
@@ -69,8 +75,9 @@ class ReceiptService {
 
     // --- Billing summary ---
     const summaryY = tableRowY + 40;
-    doc.fontSize(11).fillColor(textColor).text("TOTAL AMOUNT PAID:", 250, summaryY, { align: "right" });
-    doc.fontSize(11).fillColor(primaryColor).text(`INR ${transaction.amount.toFixed(2)}`, 480, summaryY, { align: "right", bold: true });
+    doc.fontSize(11).fillColor(textColor).font("Helvetica-Bold").text("TOTAL AMOUNT:", 250, summaryY, { width: 220, align: "right" });
+    doc.fontSize(11).fillColor(primaryColor).font("Helvetica-Bold").text(`INR ${transaction.amount.toFixed(2)}`, 480, summaryY, { align: "right" });
+    doc.font("Helvetica");
 
     // --- Footer ---
     const footerY = 650;

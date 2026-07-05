@@ -314,34 +314,43 @@ export default function TabTwoScreen() {
       <ScrollView style={styles.content}>
         {!selectedCategory && !selectedDeal && (
           <View style={styles.categoriesGrid}>
-            {filtercategories?.map((category: any) => (
-              <TouchableOpacity
-                key={category._id}
-                style={[styles.categoryCard, { backgroundColor: theme.card }]}
-                onPress={() => handleCategorySelect(category._id)}
-              >
-                <Image
-                  source={{ uri: category.image }}
-                  style={styles.categoryImage}
-                />
-                <View style={styles.categoryInfo}>
-                  <Text style={[styles.categoryName, { color: theme.text }]}>{category.name}</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    <View style={styles.subcategories}>
-                      {category?.subcategory?.map((sub: any, index: any) => (
-                        <TouchableOpacity
-                          key={index}
-                          style={[styles.subcategoryTag, { backgroundColor: theme.surface }]}
-                          onPress={() => handleSubcategorySelect(sub)}
-                        >
-                          <Text style={[styles.subcategoryText, { color: theme.secondaryText }]}>{sub}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </ScrollView>
-                </View>
-              </TouchableOpacity>
-            ))}
+            {filtercategories?.map((category: any) => {
+              // Calculate starting price
+              let startingPrice = "₹299";
+              if (category.productId && category.productId.length > 0) {
+                const prices = category.productId
+                  .map((p: any) => {
+                    const val = typeof p.price === "number" ? p.price : parseFloat(String(p.price).replace(/[^0-9.]/g, ""));
+                    return isNaN(val) ? null : val;
+                  })
+                  .filter((v: any) => v !== null);
+                if (prices.length > 0) {
+                  startingPrice = `₹${Math.min(...prices)}`;
+                }
+              }
+
+              return (
+                <TouchableOpacity
+                  key={category._id}
+                  style={[styles.categoryCard, { backgroundColor: theme.card }]}
+                  onPress={() => handleCategorySelect(category._id)}
+                  activeOpacity={0.8}
+                >
+                  <Image
+                    source={{ uri: category.image }}
+                    style={styles.categoryImage}
+                  />
+                  <View style={styles.categoryInfo}>
+                    <Text style={[styles.categoryName, { color: theme.text }]}>
+                      {category.name}
+                    </Text>
+                    <Text style={[styles.categorySubtext, { color: theme.secondaryText }]}>
+                      Starting from {startingPrice}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         )}
 
@@ -470,11 +479,15 @@ const getStyles = (theme: ThemeColors) =>
     },
     categoriesGrid: {
       padding: 15,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "space-between",
     },
     categoryCard: {
+      width: "48%",
       backgroundColor: theme.card,
-      borderRadius: 10,
-      marginBottom: 15,
+      borderRadius: 12,
+      marginBottom: 16,
       borderWidth: 1,
       borderColor: theme.border,
       shadowColor: "#000",
@@ -486,16 +499,25 @@ const getStyles = (theme: ThemeColors) =>
     },
     categoryImage: {
       width: "100%",
-      height: 150,
+      height: 220,
+      resizeMode: "cover",
     },
     categoryInfo: {
-      padding: 15,
+      paddingVertical: 12,
+      paddingHorizontal: 8,
+      alignItems: "center",
     },
     categoryName: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: "bold",
       color: theme.text,
-      marginBottom: 10,
+      marginBottom: 4,
+      textAlign: "center",
+    },
+    categorySubtext: {
+      fontSize: 13,
+      color: theme.secondaryText,
+      textAlign: "center",
     },
     subcategories: {
       flexDirection: "row",

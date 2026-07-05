@@ -3,7 +3,7 @@ import { getUserData, saveUserData, clearUserData } from "@/utils/storage";
 import React from "react";
 import axios from "axios";
 import API_URL from "@/constants/Api";
-import { syncRecentlyViewed } from "@/utils/recentlyViewed";
+import { syncRecentlyViewed, clearRecentlyViewed } from "@/utils/recentlyViewed";
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -77,6 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
   const logout = async () => {
     await clearUserData();
+    await clearRecentlyViewed();
     setUser(null);
     setIsAuthenticated(false);
   };

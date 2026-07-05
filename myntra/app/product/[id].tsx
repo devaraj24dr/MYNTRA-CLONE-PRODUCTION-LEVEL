@@ -22,6 +22,7 @@ export default function ProductDetails() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const imageWidth = Math.min(width, 500);
   const [selectedSize, setSelectedSize] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -135,7 +136,7 @@ export default function ProductDetails() {
       if (product && product.images && product.images.length > 0 && scrollViewRef.current) {
         const nextIndex = (currentImageIndex + 1) % product.images.length;
         scrollViewRef.current.scrollTo({
-          x: nextIndex * width,
+          x: nextIndex * imageWidth,
           animated: true,
         });
         setCurrentImageIndex(nextIndex);
@@ -255,7 +256,7 @@ export default function ProductDetails() {
 
   const handleScroll = (event: any) => {
     const contentOffset = event.nativeEvent.contentOffset;
-    const imageIndex = Math.round(contentOffset.x / width);
+    const imageIndex = Math.round(contentOffset.x / imageWidth);
     setCurrentImageIndex(imageIndex);
 
     // Reset auto-scroll timer when user manually scrolls
@@ -281,7 +282,7 @@ export default function ProductDetails() {
               <Image
                 key={index}
                 source={{ uri: image }}
-                style={[styles.productImage, { width }]}
+                style={[styles.productImage, { width: imageWidth }]}
                 resizeMode="cover"
               />
             ))}
@@ -363,7 +364,11 @@ export default function ProductDetails() {
             ) : similarProducts.length === 0 ? (
               <Text style={{ color: theme.secondaryText }}>No similar products available</Text>
             ) : (
-              <View style={styles.similarGrid}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.similarScroll}
+              >
                 {similarProducts.map((item: any, idx: number) => (
                   <TouchableOpacity
                     key={`${item._id}-${idx}`}
@@ -372,13 +377,24 @@ export default function ProductDetails() {
                   >
                     <Image source={{ uri: item.images?.[0] }} style={styles.similarImage} />
                     <View style={styles.similarInfo}>
-                      <Text style={[styles.similarBrand, { color: theme.text }]} numberOfLines={1}>{item.brand}</Text>
-                      <Text style={[styles.similarName, { color: theme.secondaryText }]} numberOfLines={1}>{item.name}</Text>
-                      <Text style={[styles.similarPrice, { color: theme.text }]}>₹{item.price}</Text>
+                      <Text style={[styles.similarBrand, { color: theme.text }]} numberOfLines={1}>
+                        {item.brand}
+                      </Text>
+                      <Text style={[styles.similarName, { color: theme.secondaryText }]} numberOfLines={1}>
+                        {item.name}
+                      </Text>
+                      <View style={styles.similarPriceRow}>
+                        <Text style={[styles.similarPrice, { color: theme.text }]}>₹{item.price}</Text>
+                        {item.discount && (
+                          <Text style={[styles.similarDiscount, { color: theme.primary }]}>
+                            {item.discount}
+                          </Text>
+                        )}
+                      </View>
                     </View>
                   </TouchableOpacity>
                 ))}
-              </View>
+              </ScrollView>
             )}
           </View>
         </View>
@@ -432,9 +448,12 @@ const styles = StyleSheet.create({
   },
   carouselContainer: {
     position: "relative",
+    alignSelf: "center",
+    width: "100%",
+    maxWidth: 500,
   },
   productImage: {
-    height: 400,
+    height: 550,
   },
   pagination: {
     position: "absolute",
@@ -528,39 +547,46 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 15,
   },
-  similarGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 10,
+  similarScroll: {
+    marginHorizontal: -8,
   },
   similarCard: {
-    width: "48%",
+    width: 140,
+    marginHorizontal: 8,
     borderRadius: 8,
-    overflow: "hidden",
-    marginBottom: 15,
     borderWidth: 1,
-    paddingBottom: 10,
+    overflow: "hidden",
+    paddingBottom: 8,
   },
   similarImage: {
     width: "100%",
-    height: 150,
+    height: 140,
+    resizeMode: "cover",
   },
   similarInfo: {
-    padding: 10,
+    padding: 8,
   },
   similarBrand: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "bold",
+    marginBottom: 2,
   },
   similarName: {
-    fontSize: 11,
-    marginTop: 2,
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  similarPriceRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   similarPrice: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "bold",
-    marginTop: 5,
+    marginRight: 6,
+  },
+  similarDiscount: {
+    fontSize: 11,
+    fontWeight: "600",
   },
   footer: {
     padding: 15,

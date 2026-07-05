@@ -680,7 +680,8 @@ const getStyles = (theme: ThemeColors) =>
     itemImage: {
       width: 110,
       height: 130,
-      resizeMode: "cover",
+      resizeMode: "contain",
+      backgroundColor: theme.surface,
     },
     imageFallback: {
       backgroundColor: theme.surface,
